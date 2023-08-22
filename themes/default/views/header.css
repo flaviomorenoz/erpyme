@@ -1,0 +1,86 @@
+			*{
+				padding: 0px;
+				margin: 0px ;
+				font-family: 'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
+			}
+
+			#sidebar1{
+				/*margin: auto;*/
+				width: 200px;
+				font-family: arial, Helvetica, sans-serif;
+			}
+
+			.nav li a{
+				display:  block;
+				background-color: green; /*orange;*/
+				color: #fff;
+				padding: 10px 15px;
+			}
+
+			#li0 a:hover, 
+			#li1 a:hover,
+			#li2 a:hover,
+			#li3 a:hover,
+			#li4 a:hover,
+			#li5 a:hover,
+			#li6 a:hover,
+			#li7 a:hover,
+			#li8 a:hover,
+			#li9 a:hover,
+			#li10 a:hover,
+			#li11 a:hover,
+			#li12 a:hover,
+			#li13 a:hover,
+			#li14 a:hover,
+			#li15 a:hover,
+			#li16 a:hover,
+			#li17 a:hover,
+			#li18 a:hover
+			{
+				/*background-color: green;*/
+			}
+
+			#li0 a, 
+			#li1 a,
+			#li2 a,
+			#li3 a,
+			#li4 a,
+			#li5 a,
+			#li6 a,
+			#li7 a,
+			#li8 a,
+			#li9 a,
+			#li10 a,
+			#li11 a,
+			#li12 a,
+			#li13 a,
+			#li14 a,
+			#li15 a,
+			#li16 a,
+			#li17 a,
+			#li18 a
+			{
+				/*background-color: green;*/
+
+			}
+
+			#ul0{
+				background-color: black;
+			}
+
+			.fondo-div-menu{
+				background-color: rgb(30,60,90);
+				padding-left: 20px;
+			}
+
+			.itom{
+				padding-top: 4px;
+				padding-bottom: 4px;
+			}
+
+			.itom-caja{
+				padding-top: 5px;
+				padding-bottom: 5px;
+				background-color: rgb(30,60,90);
+				width: 210px;
+			}
