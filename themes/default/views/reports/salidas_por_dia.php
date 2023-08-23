@@ -1,49 +1,8 @@
 <?php (defined('BASEPATH')) OR exit('No direct script access allowed');
 
 // DETALLE DE VENTAS
-// Nota.- Estos % tambien estan en libreria FM
-/*
-    $por_tarjeta = 0.95;
-    $por_delivery = 0.75; // pedidosYa, Yape
-
-    $cSql = "select date_format(tc.fecha,'%d-%m-%Y') as fecha, tc.dia_semana, b.cash, b.vendemas, b.transferencia, b.yape, b.plin, b.rappi, b.pedidosya, b.otros, 
-    b.cash + b.vendemas + b.transferencia + b.yape + b.plin + b.rappi + b.pedidosya + b.otros as total
-    from tec_calendario tc
-    left join 
-    (
-        select date_format(ts.date, '%d-%m-%Y') fecha, 
-            sum(tp.cash) cash,
-            sum(tp.vendemas) vendemas,
-            sum(tp.transferencia) transferencia,
-            sum(tp.yape) yape,
-            sum(tp.plin) plin,
-            sum(tp.rappi) rappi,
-            sum(tp.pedidosya) pedidosya,
-            sum(tp.otros) otros
-        from tec_sales ts
-        inner join 
-        (
-            select sale_id, 
-            sum(if(paid_by = 'cash',amount,0)) cash,
-            sum(if(paid_by = 'Vendemas',amount* $por_tarjeta,0)) vendemas,
-            sum(if(substr(paid_by,1,6)='Transf',amount,0)) transferencia,
-            sum(if(paid_by = 'Yape',amount,0)) yape,
-            sum(if(paid_by = 'Plin',amount,0)) plin,
-            sum(if(paid_by = 'Rappi',amount * $por_delivery,0)) rappi,
-            sum(if(paid_by = 'PedidosYa',amount * $por_delivery,0)) pedidosya,
-            sum(if(paid_by not in ('cash','Vendemas','Yape','Plin','Rappi','PedidosYa') and substr(paid_by,1,6)!='Transf',amount,0)) otros
-            from tec_payments where note != 'PASE'
-            group by sale_id
-        ) tp on ts.id = tp.sale_id      
-        where ts.store_id = $tienda
-        group by date_format(ts.date, '%d-%m-%Y')
-    ) b on date_format(tc.fecha,'%d-%m-%Y') = b.fecha
-    where tc.fecha >= '$fec_ini' and tc.fecha <= '$fec_fin'
-    order by tc.fecha";
-*/
 
 //die($cadena_query_ventas);
-
 $query2         = $this->db->query($cadena_query_ventas);
 
 $query_cuadre   = $this->db->query($cadena_query);
@@ -168,13 +127,13 @@ $simbolo        = "<span style=\"color:red\">S/</span>&nbsp;&nbsp;&nbsp;";
                                 <th class="col-sm-1">Rappi</th>
                                 <th class="col-sm-1">PedidosYa</th>
                                 <th class="col-sm-1">Didi</th>
-                                <th class="col-sm-1">Otros</th>
+                                <th class="col-sm-1">Culqi</th>
                                 <th class="col-sm-1">Total</th>
                             </tr>
                             <tr>
                             <?php
 
-                                $nAcu_cash = $nAcu_vendemas = $nAcu_transferencia = $nAcu_yape = $nAcu_plin = $nAcu_rappi = $nAcu_pedidosya = $nAcu_otros = $nAcu_total = $nAcu_didi = 0;
+                                $nAcu_cash = $nAcu_vendemas = $nAcu_transferencia = $nAcu_yape = $nAcu_plin = $nAcu_rappi = $nAcu_pedidosya = $nAcu_otros = $nAcu_total = $nAcu_didi = $nAcu_culqui = 0;
                                 foreach($query2->result() as $r){
                                     echo "<tr>";
                                     echo $this->fm->celda_h($r->fecha,0,"color:rgb(60,120,190)");
@@ -187,7 +146,8 @@ $simbolo        = "<span style=\"color:red\">S/</span>&nbsp;&nbsp;&nbsp;";
                                     echo $this->fm->celda(number_format($r->rappi,2));
                                     echo $this->fm->celda(number_format($r->pedidosya,2));
                                     echo $this->fm->celda(number_format($r->didi,2));
-                                    echo $this->fm->celda(number_format($r->otros,2));
+                                    //echo $this->fm->celda(number_format($r->otros,2));
+                                    echo $this->fm->celda(number_format($r->culqi,2));
                                     echo $this->fm->celda_h($simbolo . number_format($r->total,2),2,"text-align:right;padding-right:10px");
                                     echo "</tr>";
                                     $nAcu_cash              += $r->cash*1;
@@ -200,6 +160,7 @@ $simbolo        = "<span style=\"color:red\">S/</span>&nbsp;&nbsp;&nbsp;";
                                     $nAcu_didi              += $r->didi*1;
                                     $nAcu_otros             += $r->otros*1;
                                     $nAcu_total             += $r->total*1;
+                                    $nAcu_culqi            += $r->culqi*1;
                                 }
                                 echo "</tr>";
                                 echo "<tr><td></td><td></td>";
@@ -211,7 +172,8 @@ $simbolo        = "<span style=\"color:red\">S/</span>&nbsp;&nbsp;&nbsp;";
                                 echo $this->fm->celda_h(number_format($nAcu_rappi,2),"","text-align:right");
                                 echo $this->fm->celda_h(number_format($nAcu_pedidosya,2),"","text-align:right");
                                 echo $this->fm->celda_h(number_format($nAcu_didi,2),"","text-align:right");
-                                echo $this->fm->celda_h(number_format($nAcu_otros,2),"","text-align:right");
+                                //echo $this->fm->celda_h(number_format($nAcu_otros,2),"","text-align:right");
+                                echo $this->fm->celda_h(number_format($nAcu_culqi,2),"","text-align:right");
                                 echo $this->fm->celda_h(number_format($nAcu_total,2),"","text-align:right");
                                 echo "</tr>";
                             ?>
@@ -252,7 +214,7 @@ $simbolo        = "<span style=\"color:red\">S/</span>&nbsp;&nbsp;&nbsp;";
         }
     </style>
     
-    <!-- ********************************************** CIERRE DE CAJA ********************************************* -->
+    <!-- ********************************************** Cuadre de Caja General ********************************************* -->
     <div class="row">
         <div class="col-xs-12 col-sm-11">
                 <div class="box box-primary">

@@ -506,9 +506,10 @@ class Fm{
 		// Nota.- Estos % tambien estan en libreria FM
 		$por_tarjeta = 0.95;
 		$por_delivery = 0.75; // pedidosYa, Yape
+		$por_culqi = 0.975; // Culqi
 
-		$cSql = "select date_format(tc.fecha,'%d-%m-%Y') as fecha, tc.dia_semana, b.cash, b.vendemas, b.transferencia, b.yape, b.plin, b.rappi, b.pedidosya, b.didi, b.otros, 
-		    b.cash + b.vendemas + b.transferencia + b.yape + b.plin + b.rappi + b.pedidosya + b.didi + b.otros as total
+		$cSql = "select date_format(tc.fecha,'%d-%m-%Y') as fecha, tc.dia_semana, b.cash, b.vendemas, b.transferencia, b.yape, b.plin, b.rappi, b.pedidosya, b.didi, b.culqi, b.otros, 
+		    b.cash + b.vendemas + b.transferencia + b.yape + b.plin + b.rappi + b.pedidosya + b.didi + b.culqi + b.otros as total
 		    from tec_calendario tc
 		    left join 
 		    (
@@ -521,6 +522,7 @@ class Fm{
 		            sum(tp.rappi) rappi,
 		            sum(tp.pedidosya) pedidosya,
 		            sum(tp.didi) didi,
+		            sum(tp.culqi) culqi,
 		            sum(tp.otros) otros
 		        from tec_sales ts
 		        inner join 
@@ -534,7 +536,8 @@ class Fm{
 		            sum(if(paid_by = 'Rappi',amount * $por_delivery,0)) rappi,
 		            sum(if(paid_by = 'PedidosYa',amount * $por_delivery,0)) pedidosya,
 		            sum(if(paid_by = 'Didi',amount * $por_delivery,0)) didi,
-		            sum(if(paid_by not in ('cash','Vendemas','Yape','Plin','Rappi','PedidosYa','Didi') and substr(paid_by,1,6)!='Transf',amount,0)) otros
+		            sum(if(paid_by = 'CULQI',amount * $por_culqi,0)) culqi,
+		            sum(if(paid_by not in ('cash','Vendemas','Yape','Plin','Rappi','PedidosYa','Didi','CULQI') and substr(paid_by,1,6)!='Transf',amount,0)) otros
 		            from tec_payments where note != 'PASE'
 		            group by sale_id
 		        ) tp on ts.id = tp.sale_id      
