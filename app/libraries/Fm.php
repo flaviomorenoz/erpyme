@@ -66,7 +66,7 @@ class Fm{
 			$cEstilo = "style=\"$estilo\"";
 
 		$cad_clase = "";
-		if(strlen(clase)>0){
+		if(strlen($clase)>0){
 			$cad_clase = "class=\"{$clase}\"";
 		}
 
