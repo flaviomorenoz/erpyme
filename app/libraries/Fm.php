@@ -506,7 +506,7 @@ class Fm{
 		// Nota.- Estos % tambien estan en libreria FM
 		$por_tarjeta = 0.95;
 		$por_delivery = 0.75; // pedidosYa, Yape
-		$por_culqi = 0.975; // Culqi
+		$por_culqi = (100 - 2.8)/100; // Culqi
 
 		$cSql = "select date_format(tc.fecha,'%d-%m-%Y') as fecha, tc.dia_semana, b.cash, b.vendemas, b.transferencia, b.yape, b.plin, b.rappi, b.pedidosya, b.didi, b.culqi, b.otros, 
 		    b.cash + b.vendemas + b.transferencia + b.yape + b.plin + b.rappi + b.pedidosya + b.didi + b.culqi + b.otros as total

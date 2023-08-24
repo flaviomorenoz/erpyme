@@ -12,6 +12,7 @@ class Pos extends MY_Controller {
         $this->load->helper('pos');
         
         
+        $this->load->model('pos_model_apisperu');
         $this->load->model('pos_model');
 
         $this->load->library('form_validation');
@@ -111,21 +112,10 @@ class Pos extends MY_Controller {
             $i = isset($_POST['product_id']) ? sizeof($_POST['product_id']) : 0;
             $el_inicio = 0; // para conocer el total descontado (descuento global)
             
-            //die("Flag 1");
             for ($r = 0; $r < $i; $r++) {
                 
                 $item_id            = $_POST['product_id'][$r];
                 $real_unit_price    = $this->tec->formatDecimal($_POST['real_unit_price'][$r]);
-                
-                /*
-                    if(strlen($_POST["cual_delivery"]) > 0){
-                        $price_tmp          = $this->cual_delivery($item_id, $_POST["cual_delivery"], $this->session->userdata('store_id'));
-                        $real_unit_price    = ($price_tmp == 0 ? $_POST['real_unit_price'][$r] : $price_tmp); 
-                    }else{
-                        $real_unit_price    = $this->tec->formatDecimal($_POST['real_unit_price'][$r]);
-                    }
-                */
-
                 $item_quantity      = $_POST['quantity'][$r];
                 $item_comment       = $_POST['item_comment'][$r];
                 $item_discount      = isset($_POST['product_discount'][$r]) ? $_POST['product_discount'][$r] : '0';
@@ -187,25 +177,22 @@ class Pos extends MY_Controller {
 
 
                     $pr_item_tax = 0; $item_tax = 0; $tax = "";
-                        if (isset($product_details->tax) && $product_details->tax != 0) {
 
-                            if ($product_details && $product_details->tax_method == 1) {
-                                $item_tax = $this->tec->formatDecimal(((($unit_price) * $product_details->tax) / 100), 4);
-                                $tax = $product_details->tax . "%";
-                            } else {
-                                $item_tax = $this->tec->formatDecimal(((($unit_price) * $product_details->tax) / (100 + $product_details->tax)), 4);
-                                $tax = $product_details->tax . "%";
-                                $item_net_price -= $item_tax;
-                            }
+                    if (isset($product_details->tax) && $product_details->tax != 0) {
 
-                            $pr_item_tax = $this->tec->formatDecimal(($item_tax * $item_quantity), 4);
-                            //echo "---- $item_tax  $item_quantity<br>";
+                        if ($product_details && $product_details->tax_method == 1) {
+                            $item_tax = $this->tec->formatDecimal(((($unit_price) * $product_details->tax) / 100), 4);
+                            $tax = $product_details->tax . "%";
+                        } else {
+                            $item_tax = $this->tec->formatDecimal(((($unit_price) * $product_details->tax) / (100 + $product_details->tax)), 4);
+                            $tax = $product_details->tax . "%";
+                            $item_net_price -= $item_tax;
                         }
 
+                        $pr_item_tax = $this->tec->formatDecimal(($item_tax * $item_quantity), 4);
+                    }
+
                     $product_tax += $pr_item_tax;
-                    
-                    //echo "product_tax:" . $product_tax . "<br>";
-                    //echo $real_unit_price . "(product_tax:" . $product_tax . ")<br>";
                     
                     $subtotal = $this->tec->formatDecimal((($item_net_price * $item_quantity) + $pr_item_tax), 4);
 
@@ -333,15 +320,15 @@ class Pos extends MY_Controller {
                 redirect($_SERVER["HTTP_REFERER"]);
             }
 
-            $serie = $this->pos_model->nube_serie($this->data["tipoDoc"], $this->input->post('txt_tipoDocAfectado'),$this->session->userdata('store_id'));
+            $serie = $this->pos_model->nube_serie($this->data["tipoDoc"], $this->input->post('txt_tipoDocAfectado'), $this->session->userdata('store_id'));
 
             $valor_deliv = 0;
+            
             if($this->input->post('delivery')=='3'){ // LaCasita o delivery_propio
                 $valor_deliv = $this->input->post("valor_deliv");
             }
 
             $tipo_precio_id = $this->input->post('cual_delivery');
-            //die("T:".$tipo_precio_id);
 
             $data = array('date'    => $date,
                 'customer_id'       => $customer_id,
@@ -371,9 +358,6 @@ class Pos extends MY_Controller {
                 'tipo_precio_id' 	=> $tipo_precio_id
             );
 
-            //echo("Flag 3:");
-            //print_r($_POST);
-            //die("Flavio:".$tipo_precio_id);
             if (!$eid) {
                 $data['store_id'] = $this->session->userdata('store_id');
             }
@@ -456,7 +440,7 @@ class Pos extends MY_Controller {
         {
             if ($suspend) {
                 unset($data['status'], $data['rounding'], $data['tipoDoc']);
-                if ($this->pos_model->suspendSale($data, $products, $did)) {
+                if ($this->pos_model_apisperu->suspendSale($data, $products, $did)) {
                     $this->session->set_userdata('rmspos', 1);
                     $this->session->set_flashdata('message', lang("sale_saved_to_opened_bill"));
                     redirect("pos");
@@ -473,7 +457,7 @@ class Pos extends MY_Controller {
                 }
                 $data['updated_at'] = date('Y-m-d H:i:s');
                 $data['updated_by'] = $this->session->userdata('user_id');
-                if($this->pos_model->updateSale($eid, $data, $products)) {
+                if($this->pos_model_apisperu->updateSale($eid, $data, $products)) {
                     $this->session->set_userdata('rmspos', 1);
                     $this->session->set_flashdata('message', lang("sale_updated"));
                     redirect("sales");
@@ -494,7 +478,7 @@ class Pos extends MY_Controller {
                 $data["desMotivo"]          = $this->input->post("txt_desMotivo");
                 $data["correlativo"]        = $this->input->post("correlativo");
 
-                if($sale = $this->pos_model->addSale($data, $products, $payment, $did)){
+                if($sale = $this->pos_model_apisperu->addSale($data, $products, $payment, $did)){
                     
                     $this->session->set_userdata('rmspos', 1);
                     if($this->pos_model->get_enviada_sunat($sale["sale_id"])){
@@ -514,7 +498,7 @@ class Pos extends MY_Controller {
                     
                     $redirect_to = $this->Settings->after_sale_page ? "pos" : "pos/view/" . $sale['sale_id'];
                     
-                    if ($this->Settings->auto_print) {
+                    if ($this->Settings->auto_print){
                         
                         if ( ! $this->Settings->remote_printing) {
                             
@@ -539,8 +523,8 @@ class Pos extends MY_Controller {
             // Esto se carga al Inicio ------------------
             
             if(isset($sid) && !empty($sid)) {
-                $suspended_sale = $this->pos_model->getSuspendedSaleByID($sid);
-                $inv_items = $this->pos_model->getSuspendedSaleItems($sid);
+                $suspended_sale     = $this->pos_model_apisperu->getSuspendedSaleByID($sid);
+                $inv_items          = $this->pos_model_apisperu->getSuspendedSaleItems($sid);
                 krsort($inv_items);
                 $c = rand(100000, 9999999);
                 foreach ($inv_items as $item) {
@@ -552,16 +536,16 @@ class Pos extends MY_Controller {
                         $row->name = $item->product_name;
                         $row->tax = 0;
                     }
-                    $row->price = $item->net_unit_price+($item->item_discount/$item->quantity);
-                    $row->unit_price = $item->unit_price+($item->item_discount/$item->quantity)+($item->item_tax/$item->quantity);
-                    $row->real_unit_price = $item->real_unit_price;
-                    $row->discount = $item->discount;
-                    $row->qty = $item->quantity;
-                    $row->comment = $item->comment;
-                    $row->ordered = $item->quantity;
-                    $combo_items = FALSE;
-                    $ri = $this->Settings->item_addition ? $row->id : $c;
-                    $pr[$ri] = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'combo_items' => $combo_items);
+                    $row->price             = $item->net_unit_price+($item->item_discount/$item->quantity);
+                    $row->unit_price        = $item->unit_price+($item->item_discount/$item->quantity)+($item->item_tax/$item->quantity);
+                    $row->real_unit_price   = $item->real_unit_price;
+                    $row->discount          = $item->discount;
+                    $row->qty               = $item->quantity;
+                    $row->comment           = $item->comment;
+                    $row->ordered           = $item->quantity;
+                    $combo_items            = FALSE;
+                    $ri             = $this->Settings->item_addition ? $row->id : $c;
+                    $pr[$ri]        = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'combo_items' => $combo_items);
                     $c++;
                 }
                 $this->data['items'] = json_encode($pr);
@@ -570,11 +554,12 @@ class Pos extends MY_Controller {
                 $this->data['message'] = lang('suspended_sale_loaded');
             }
 
+            // SOLO VEO QUE GUARDA ESTA INFORMACION PARA PASARLO A LA VISTA ------------------
             if(isset($eid) && !empty($eid)) {
-                $sale = $this->pos_model->getSaleByID($eid);
-                $inv_items = $this->pos_model->getAllSaleItems($eid);
+                $sale       = $this->pos_model->getSaleByID($eid);
+                $inv_items  = $this->pos_model->getAllSaleItems($eid);
                 krsort($inv_items);
-                $c = rand(100000, 9999999);
+                $c          = rand(100000, 9999999);
                 foreach ($inv_items as $item) {
                     $row = $this->site->getProductByID($item->product_id);
                     if (!$row) {
@@ -594,8 +579,8 @@ class Pos extends MY_Controller {
                             $combo_item->quantity += ($combo_item->qty*$item->quantity);
                         }
                     }
-                    $ri = $this->Settings->item_addition ? $row->id : $c;
-                    $pr[$ri] = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'combo_items' => $combo_items);
+                    $ri             = $this->Settings->item_addition ? $row->id : $c;
+                    $pr[$ri]        = array('id' => $c, 'item_id' => $row->id, 'label' => $row->name . " (" . $row->code . ")", 'row' => $row, 'combo_items' => $combo_items);
                     $c++;
                 }
                 $this->data['items']    = json_encode($pr);
@@ -604,27 +589,27 @@ class Pos extends MY_Controller {
                 $this->data['message']  = lang('sale_loaded');
             }
             
-            // Verificar el status de la ultima casa
+            // Verificar el status de la ultima caja
             $sss = $this->pos_model->cash($this->session->userdata('user_id'));
 
             foreach($sss as $r){
                 $this->data['ultimo_status_caja'] = $r->status;
             }
 
-            $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
+            $this->data['error']        = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
             $this->data['reference_note'] = isset($sid) && !empty($sid) ? $suspended_sale->hold_ref : (isset($eid) && !empty($eid) ? $sale->hold_ref : NULL);
-            $this->data['sid'] = isset($sid) && !empty($sid) ? $sid : 0;
-            $this->data['eid'] = isset($eid) && !empty($eid) ? $eid : 0;
-            $this->data['customers'] = $this->site->getAllCustomers();
-            $this->data["tcp"] = $this->pos_model->products_count($this->Settings->default_category);
-            $this->data['products'] = $this->ajaxproducts($this->Settings->default_category, 1);
-            $this->data['categories'] = $this->site->getAllCategories();
-            $this->data['message'] = $this->session->flashdata('message');
+            $this->data['sid']          = isset($sid) && !empty($sid) ? $sid : 0;
+            $this->data['eid']          = isset($eid) && !empty($eid) ? $eid : 0;
+            $this->data['customers']    = $this->site->getAllCustomers();
+            $this->data["tcp"]          = $this->pos_model->products_count($this->Settings->default_category);
+            $this->data['products']     = $this->ajaxproducts($this->Settings->default_category, 1);
+            $this->data['categories']   = $this->site->getAllCategories();
+            $this->data['message']      = $this->session->flashdata('message');
             $this->data['suspended_sales'] = $this->site->getUserSuspenedSales();
 
-            $this->data['printer'] = $this->site->getPrinterByID($this->Settings->printer);
-            $printers = array();
-            if (!empty($order_printers = json_decode($this->Settings->order_printers))) {
+            $this->data['printer']      = $this->site->getPrinterByID($this->Settings->printer);
+            $printers                   = array();
+            if (!empty($order_printers  = json_decode($this->Settings->order_printers))) {
                 foreach ($order_printers as $printer_id) {
                     $printers[] = $this->site->getPrinterByID($printer_id);
                 }
