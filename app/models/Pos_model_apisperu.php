@@ -8,6 +8,120 @@ class Pos_model_apisperu extends CI_Model
         $this->Igv = 10;
     }
 
+    public function addSale($data, $items, $payment = array(), $did = NULL) {
+
+        $this->db->where('serie',$data['serie']);
+        $this->db->where('correlativo',$data['correlativo']);
+        $query = $this->db->get('sales');
+        
+        $n=0;
+        foreach($query->result() as $r){
+            $n++;
+        }
+        
+        
+        if ($n==0){
+            $this->db->trans_begin();
+            $bandera_valida = true;
+
+            $this->db->insert('sales', $data);
+
+            if($this->db->insert('sales', $data)){
+    
+                $sale_id = $this->db->insert_id();
+    
+                foreach ($items as $item){
+                    $item['sale_id'] = $sale_id;
+                    if($this->db->insert('sale_items', $item)) {
+                        if ($item['product_id'] > 0 && $product = $this->site->getProductByID($item['product_id'])) {
+                            if ($product->type == 'standard') {
+                                $this->db->update('product_store_qty', array('quantity' => ($product->quantity-$item['quantity'])), array('product_id' => $product->id, 'store_id' => $data['store_id']));
+                            } elseif ($product->type == 'combo') {
+                                $combo_items = $this->getComboItemsByPID($product->id);
+                                foreach ($combo_items as $combo_item) {
+                                    $cpr = $this->site->getProductByID($combo_item->id);
+                                    if($cpr->type == 'standard') {
+                                        $qty = $combo_item->qty * $item['quantity'];
+                                        $this->db->update('product_store_qty', array('quantity' => ($cpr->quantity-$qty)), array('product_id' => $cpr->id, 'store_id' => $data['store_id']));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+    
+                if($did) {
+                    $this->db->delete('suspended_sales', array('id' => $did));
+                    $this->db->delete('suspended_items', array('suspend_id' => $did));
+                }
+                
+                $msg = array();
+                if(! empty($payment)) {
+                    $nLimites = count($payment);
+                    for($i=0; $i<$nLimites; $i++){
+                        
+                        $payment[$i]['sale_id'] = $sale_id;
+                        $ar_pay = $payment[$i];
+                        if ($this->db->insert('payments', $ar_pay)){
+
+                        }else{
+                            //die("No ha podido grabar Payments !!!");
+                        }
+
+                    }
+                }
+                
+                // A estas alturas ya debe estar registrado un pago en la db
+                
+                usleep(400000);
+                $query = $this->db->select('id')->where('sale_id',$sale_id)->get("payments");
+                $nix = 0;
+                foreach($query->result() as $r){ 
+                    $nix++;
+                }
+                if($nix == 0){
+                    $bandera_valida = false;
+                }
+
+                if (strtoupper($payment[0]["note"])!='PASE'){
+                    // Generando la BV/FA electronica
+                    $this->el_json  = "";
+     
+                    //$this->enviar_doc_sunat_individual($sale_id, false);  // deprecado
+                    
+                    // (1) preparo $data:
+                    //$data["store_id"]       = "";
+                    //$data["correlativo"]    = "";
+                    //$data["customer_name"]  = "";
+
+
+
+                    // (2) preparo $items:
+                    // seguramente ya esta?
+
+
+                    $this->enviar_doc_sunat($sale_id, $data, $items);
+
+
+                }else{
+                    $this->marcar_envio_sunat($sale_id,'2');  // para el caso de PASE
+                    //if($this->db->trans_status() === FALSE){ die("Algo ya falló x"); }
+                }
+                
+            }
+
+            if ($this->db->trans_status() === FALSE || $bandera_valida == false){
+                $this->db->trans_rollback();
+                return false;
+            }else{
+                $this->db->trans_commit();
+                return array('sale_id' => $sale_id, 'message' => $msg);
+            }
+        }
+        return false;
+    }
+
+
     public function enviar_doc_sunat($sale_id, $data, $items){  // IMPLEMENTACION DE APISPERU
 
         // Token que sale del Loguin de la Empresa.
@@ -41,7 +155,7 @@ class Pos_model_apisperu extends CI_Model
         if($tipo_documento == 'Boleta'){
 
             // Subvariables aun por definir:
-            $serie      = "B001";
+            $serie      = $data["serie"]; //"B001";
             $tip_forma  = "Contado";
             $fecha_emi  = date("Y-m-d") . "T" . date("H:i:s");
             $numDoc     = ""; // normalmente es el dni del cliente, pero en caso de empresa, no se
@@ -201,7 +315,8 @@ class Pos_model_apisperu extends CI_Model
 
             $url = "https://facturacion.apisperu.com/api/v1/invoice/send";
 
-        }elseif($tipo_documento == 'Factura'){
+        }
+        /*elseif($tipo_documento == 'Factura'){
 
             // Subvariables aun por definir:
             $serie      = "F001";
@@ -375,6 +490,7 @@ class Pos_model_apisperu extends CI_Model
 
             $url = "https://facturacion.apisperu.com/api/v1/note/send";
         }
+        */
 
         //echo($campos);
 
@@ -382,7 +498,7 @@ class Pos_model_apisperu extends CI_Model
         $gestor         = fopen($nombre_file,"w");
         fputs($gestor, $campos);
         fclose($gestor);
-        /*
+        
         $curl = curl_init();
 
         curl_setopt($curl, CURLOPT_URL, $url);
@@ -405,7 +521,7 @@ class Pos_model_apisperu extends CI_Model
         curl_close($curl);
 
         return $response;
-        */
+        
     }
 
     public function updateSale($id, $data, $items) {
