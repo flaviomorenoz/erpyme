@@ -65,7 +65,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <?php echo form_open("auth/forgot_password"); ?>
-                <div class="modal-header">
+                <div class="modal-header" style="background-color:steelblue!important;">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</i></button>
                     <h4 class="modal-title"><?= lang('forgot_password'); ?></h4>
                 </div>
