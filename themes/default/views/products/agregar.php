@@ -97,7 +97,7 @@
                                 for($i=0;$i<4;$i++){
                                     echo "<div class=\"row\">";
                                     echo "<div class=\"col-xs-12 col-sm-12 col-md-4\" style=\"margin:5px\">";        
-                                    echo form_dropdown("p$i",$ar,'','class="form-control tip" id="p$i" required="required" onclick=""');
+                                    echo form_dropdown("p$i",$ar,'','class="form-control tip" id="p$i" onclick=""');
                                     echo "</div></div>";        
                                 }
                                 ?>
