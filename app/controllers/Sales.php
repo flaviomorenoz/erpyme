@@ -23,7 +23,7 @@ class Sales extends MY_Controller {
         $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
         $this->data['page_title'] = lang('sales');
         $this->data['desde'] = is_null($cDesde) ? date("Y-m-d") : $cDesde;
-        $this->data['hasta'] = $cHasta;
+        $this->data['hasta'] = is_null($cHasta) ? date("Y-m-d") : $cHasta; //$cHasta;
         $this->data['tienda'] = $tienda;
         $this->data["metodo"] = $metodo;
         $bc = array(array('link' => '#', 'page' => lang('sales')));

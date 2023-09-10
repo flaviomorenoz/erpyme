@@ -663,7 +663,7 @@ class Pos_model extends CI_Model
         return json_encode($ar);
         
     }
-
+/*
     public function addSale($data, $items, $payment = array(), $did = NULL) {
 
         $this->db->where('serie',$data['serie']);
@@ -772,7 +772,7 @@ class Pos_model extends CI_Model
         }
         return false;
     }
-
+*/
     function enviar_doc_sunat_nubefact_individual($sale_id, $activar=false){
         
         $result = $this->db->select("tipoDoc, customer_id, store_id, serie, total, total_tax, grand_total, correlativo, total_discount, tipoDocAfectado, serieDocfectado, numDocfectado, codMotivo")
@@ -1431,20 +1431,6 @@ class Pos_model extends CI_Model
             "numero"                => $numero
         );
         return json_encode($ar);
-    }
-
-    function get_enviada_sunat($sale_id){
-        $cSql = "select envio_electronico from tec_sales where id=$sale_id";
-        $query = $this->db->query($cSql);
-        $envio_electronico = "0";
-        foreach($query->result() as $r){
-            $envio_electronico = $r->envio_electronico;
-        }
-        if($envio_electronico != "0"){
-            return true;
-        }else{
-            return false;
-        }
     }
 
     function stripe($amount = 0, $card_info = array(), $desc = '') {
