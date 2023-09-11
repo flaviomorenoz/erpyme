@@ -17,7 +17,7 @@
     //$data_qr = "RUC | TIPO DE DOCUMENTO | SERIE | NUMERO | MTO TOTAL IGV | MTO TOTAL DEL COMPROBANTE | FECHA DE EMISION | TIPO DE DOCUMENTO ADQUIRENTE | NUMERO DE DOCUMENTO ADQUIRENTE | CODIGO HASH |";
 
     $cSql = "select c.descrip as forma_pago, 
-    '11111111111' as ruc,
+    '20551286429' as ruc,
     a.tipoDoc, 
     a.serie, a.correlativo, a.total_tax as total_igv, 
     a.grand_total as monto_total_comprobante,

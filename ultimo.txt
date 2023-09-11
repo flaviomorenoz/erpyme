@@ -3,8 +3,8 @@
               "tipoOperacion": "0101", 
               "tipoDoc": "03",
               "serie": "BBB3",
-              "correlativo": "5",
-              "fechaEmision": "2023-09-11T10:06:59-05:00",
+              "correlativo": "2",
+              "fechaEmision": "2023-09-08T17:27:28-05:00",
               "formaPago": {
                 "moneda": "PEN",
                 "tipo": "Contado"
@@ -31,18 +31,18 @@
                   "distrito": "Surco",
                   "ubigueo": "150140"
                 }
-              },"mtoOperGravadas": 16.36,
-              "mtoIGV": 1.64,
+              },"mtoOperGravadas": 29.09,
+              "mtoIGV": 2.91,
               "icbper": 0,
-              "valorVenta": 16.36,
-              "totalImpuestos": 1.64,
-              "subTotal": 18,
+              "valorVenta": 29.09,
+              "totalImpuestos": 2.91,
+              "subTotal": 32,
               "redondeo": 0,
-              "mtoImpVenta": 18,
+              "mtoImpVenta": 32,
               "details": [{
-                  "codProducto": "P827",
+                  "codProducto": "P800",
                   "unidad": "NIU",
-                  "descripcion": "CAPUCCINO",
+                  "descripcion": "FRESA SALVAJE",
                   "cantidad": 1,
                   "mtoValorUnitario": 16.36,
                   "mtoValorVenta": 16.36,
@@ -52,11 +52,24 @@
                   "tipAfeIgv": 10,
                   "totalImpuestos": 1.64,
                   "mtoPrecioUnitario": 17.99
+                },{
+                  "codProducto": "P818",
+                  "unidad": "NIU",
+                  "descripcion": "FIT ENERGY",
+                  "cantidad": 1,
+                  "mtoValorUnitario": 12.73,
+                  "mtoValorVenta": 12.73,
+                  "mtoBaseIgv": 12.73,
+                  "porcentajeIgv": 10,
+                  "igv": 1.27,
+                  "tipAfeIgv": 10,
+                  "totalImpuestos": 1.27,
+                  "mtoPrecioUnitario": 14
                 }],
               "legends": [
                 {
                   "code": "1000",
-                  "value": "Son  y 80/100 Soles"
+                  "value": "Son treinta y dos y 00/100 Soles"
                 }
               ]
             }

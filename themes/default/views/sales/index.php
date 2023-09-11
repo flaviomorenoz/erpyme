@@ -391,11 +391,11 @@ if(!isset($metodo)){ $metodo = "";}
         if(respeta){
             $.ajax({
                 data:{id:id},
-                url:'<?= base_url('pos/anular_doc') ?>',
+                url:'<?= base_url('pos_model_apisperu/enviar_anulacion/') ?>' + id,
                 type:'get',
                 success:function(res){
-                    var respuesta = JSON.parse(res)
-                    if(respuesta.rpta == 'OK'){
+                    //var respuesta = JSON.parse(res)
+                    if(res != 'KO'){
                         alert(respuesta.mensaje)    
                     }else{
                         alert("Hubo un inconveniente...no se pudo borrar")

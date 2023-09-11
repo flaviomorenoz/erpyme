@@ -262,9 +262,7 @@ class Pos extends MY_Controller {
                 $order_tax = 0;
             }
             
-            
-
-            // El cambio que haré aquí es que el totax tax primero le resto el descuento (en caso de global) ****** by fmz
+            // El cambio que haré aquí es que el total tax primero le resto el descuento (en caso de global) ****** by fmz
             $order_discount_id = $this->input->post('order_discount');
             $opos = strpos($order_discount_id, $percentage);
             if ($opos !== false){ // Existe % de descuento
@@ -440,6 +438,7 @@ class Pos extends MY_Controller {
         {
             if ($suspend) {
                 unset($data['status'], $data['rounding'], $data['tipoDoc']);
+        
                 if ($this->pos_model_apisperu->suspendSale($data, $products, $did)) {
                     $this->session->set_userdata('rmspos', 1);
                     $this->session->set_flashdata('message', lang("sale_saved_to_opened_bill"));
@@ -457,6 +456,7 @@ class Pos extends MY_Controller {
                 }
                 $data['updated_at'] = date('Y-m-d H:i:s');
                 $data['updated_by'] = $this->session->userdata('user_id');
+        
                 if($this->pos_model_apisperu->updateSale($eid, $data, $products)) {
                     $this->session->set_userdata('rmspos', 1);
                     $this->session->set_flashdata('message', lang("sale_updated"));
@@ -478,10 +478,11 @@ class Pos extends MY_Controller {
                 $data["desMotivo"]          = $this->input->post("txt_desMotivo");
                 $data["correlativo"]        = $this->input->post("correlativo");
 
+
                 if($sale = $this->pos_model_apisperu->addSale($data, $products, $payment, $did)){
                     
                     $this->session->set_userdata('rmspos', 1);
-                    if($this->pos_model->get_enviada_sunat($sale["sale_id"])){
+                    if($this->pos_model_apisperu->get_enviada_sunat($sale["sale_id"])){
                         $msg = "Venta enviada con Exito (Aceptada)";    
                     }else{
                         $msg = "Venta agregada con Exito (sin)";
@@ -641,6 +642,7 @@ class Pos extends MY_Controller {
         }
     }
     
+    /*
     public function enviar_anulacion_nubefact(){
         $id = $_GET["id"];
         
@@ -656,7 +658,7 @@ class Pos extends MY_Controller {
         }
         
         echo $this->data["respuesta"];
-    }
+    }*/
 
     public function envio_masivo_individual_index(){
         $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('pos'), 'page' => lang('pos')), array('link' => '#', 'page' => lang('open_registers')));
@@ -1140,7 +1142,7 @@ class Pos extends MY_Controller {
             } else {
                 $category_products = $this->pos_model->products_count($category_id);
                 header('Content-Type: application/json');
-                echo json_encode(array('products' => $prods, 'tcp' => $category_products));
+                echo json_encode(array('products' => $prods, 'tcp' => $category_products)); // $prods
             }
         } else {
             return $prods;
