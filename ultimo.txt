@@ -3,8 +3,8 @@
               "tipoOperacion": "0101", 
               "tipoDoc": "03",
               "serie": "BBB3",
-              "correlativo": "2",
-              "fechaEmision": "2023-08-30T19:22:02-05:00",
+              "correlativo": "5",
+              "fechaEmision": "2023-09-11T10:06:59-05:00",
               "formaPago": {
                 "moneda": "PEN",
                 "tipo": "Contado"
@@ -40,9 +40,9 @@
               "redondeo": 0,
               "mtoImpVenta": 18,
               "details": [{
-                  "codProducto": "P806",
+                  "codProducto": "P827",
                   "unidad": "NIU",
-                  "descripcion": "DULCE DE LECHE",
+                  "descripcion": "CAPUCCINO",
                   "cantidad": 1,
                   "mtoValorUnitario": 16.36,
                   "mtoValorVenta": 16.36,

@@ -516,7 +516,7 @@ class Pos_model_apisperu extends CI_Model
             )
         );
 
-        $response = curl_exec($curl);
+        $response="probando"; //$response = curl_exec($curl);
 
         curl_close($curl);
 
