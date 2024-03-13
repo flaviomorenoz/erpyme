@@ -373,10 +373,12 @@ class Reports extends MY_Controller
 
     function ventas_por_dia(){
         $this->data['error']        = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
-        $this->data['page_title']   = "<b>Ventas Acumuladas por día</b>";
+        $this->data['page_title']   = "<span style=\"font-weight:bold\">Ventas por día</span>";
         
         if(isset($_REQUEST["tienda"])){
             $this->data['tienda']   = $_REQUEST["tienda"];
+            $this->data['anno']   = $_REQUEST["anno"];
+            $this->data['mes']   = $_REQUEST["mes"];
         }
         $bc                         = array(array('link' => '#', 'page' => lang('')));
         $meta                       = array('page_title' => $this->data['page_title'], 'bc' => $bc);
@@ -393,6 +395,17 @@ class Reports extends MY_Controller
             $tienda = $_REQUEST['tienda'];
         }
 
+        $anno = ""; //date("Y");
+        if($_REQUEST['anno']){
+            $anno = $_REQUEST['anno'];
+        }
+
+        $mes = ""; //date("m");
+        if($_REQUEST['mes']){
+            $mes = $_REQUEST['mes'];
+        }
+
+
         /* REPORTE DE VENTAS DIARIAS POR TIENDA */
         $this->datatables->select("date_format(a.date, '%Y-%m-%d') as fecha, 
             CONCAT(ELT(WEEKDAY(date) + 1, 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo')) as dia_semana,
@@ -406,10 +419,19 @@ class Reports extends MY_Controller
         if(strlen($tienda)>0){
             $this->datatables->where("a.store_id",$tienda);
         }
+
+        if(strlen($anno)>0){
+            $this->datatables->where("extract(year from a.date)=$anno");
+        }
         
+        if(strlen($mes)>0){
+            $this->datatables->where("extract(month from a.date)=$mes");
+        }
+
         $this->datatables->group_by("date_format(a.date, '%Y-%m-%d'), CONCAT(ELT(WEEKDAY(date) + 1, 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'))");
         
 
+        //die("llego sobrado");
         //$this->datatables->get_ordering("date_format(a.date, '%Y-%m-%d')");
         //$this->datatables->order_by("date_format(a.date, '%Y-%m-%d')");
 
@@ -489,9 +511,16 @@ class Reports extends MY_Controller
         $bc     = array(array('link' => '#', 'page' => lang('')));
         $meta   = array('page_title' => "<span style=\"color:rgb(60,120,190);font-weight:bold;\">Cuadre de Caja</span>", 'bc' => $bc);
 
-        $this->data["cadena_query"]         = $this->fm->query_salidas_por_dia($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_fin']);
+        // Tabla 1
+        $this->data["cadena_query_ventas"]  = $this->reports_model->query_salidas_por_dia_ventas($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_fin']);
+        //die($this->data["cadena_query_ventas"]);
 
-        $this->data["cadena_query_ventas"]  = $this->fm->query_salidas_por_dia_ventas($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_fin']);
+        // tabla 2
+        $this->data["cadena_query"]         = $this->reports_model->query_salidas_por_dia($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_fin']);
+
+        // Reporte por Canales de Venta
+        $this->data["cadena_canales"]       = $this->reports_model->query_canales($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_fin']);
+        //die($this->data["cadena_canales"]);
 
         $this->page_construct('reports/salidas_por_dia', $this->data, $meta);
     }

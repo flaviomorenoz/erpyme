@@ -337,7 +337,7 @@
                                                         <th style="width: 15%;text-align:center;"><?=lang('price')?></th>
                                                         <th style="width: 15%;text-align:center;"><?=lang('qty')?></th>
                                                         <th style="width: 20%;text-align:center;"><?=lang('subtotal')?></th>
-                                                        <th style="width: 20px;" class="satu"><i class="fa fa-trash-o"></i></th>
+                                                        <th style="width: 44px;" class="satu"><i class="fa fa-trash-o"></i></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody></tbody>
@@ -480,7 +480,7 @@
                                     <input type="hidden" name="txt_numDocfectado" id="txt_numDocfectado" size="8" />
                                     <input type="hidden" name="txt_codMotivo" id="txt_codMotivo" size="8" />
                                     <input type="hidden" name="txt_desMotivo" id="txt_desMotivo" size="8" />
-                                    <input type="hidden" name="cual_delivery" id="cual_delivery" value="">
+                                    <input type="text" name="cual_delivery" id="cual_delivery" value="">
                                     <input type="hidden" name="correlativo" id="correlativo">
                                     <input type="hidden" name="txt_persona_delivery" id="txt_persona_delivery">
                                 </div>

@@ -122,3 +122,38 @@ if ( ! function_exists('word_wrap')) {
         return $output;
     }
 }
+
+if ( ! function_exists('traza')) {
+    function traza($msg){
+        $nombre_file = "traza.txt";
+        $gestor = fopen($nombre_file,"a+");
+        $msg .= "\n";
+        fputs($gestor,$msg);
+        fclose($gestor);
+    }
+}
+
+if ( ! function_exists('celda')) {
+    function celda($dato="", $centrar=0, $estilo="", $cAtributo=""){
+        if($dato=='0'){
+            $dato = "<span style=\"color:#cccccc;\">0</span>";
+        }
+
+        $cad = "";
+
+        $cEstilo = "";
+        if(strlen($estilo)>0)
+            $cEstilo = "style=\"$estilo\"";
+
+        if($centrar==1)
+            $cad .= "<td align=\"center\" $cEstilo $cAtributo>$dato</td>";
+        elseif($centrar==2)
+            $cad .= "<td align=\"right\" $cEstilo $cAtributo>$dato</td>";
+        else
+            $cad .= "<td align=\"left\" $cEstilo $cAtributo>$dato</td>";
+        
+        return $cad . "\n";
+    }
+
+}
+

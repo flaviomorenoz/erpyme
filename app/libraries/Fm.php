@@ -647,5 +647,27 @@ class Fm{
 		}
 		return $dato;
 	}
+
+	function json_datatable($ar_campos,$result){ // Devuelve un json preparado para el datatable, el result debe ser result_array
+		$nCols = count($ar_campos);
+
+			$cad = "";
+			$limite = count($ar_campos);
+
+			foreach($result as $r){
+				$cad .= "[";
+				for($i=0; $i<$limite; $i++){
+					$cad .=  '"' . $r[$ar_campos[$i]] . '",';
+					//echo "r[" . $ar_campos[$i] . "] = " . $r[$ar_campos[$i]] . "<br>";
+				}
+				$cad = substr($cad,0,strlen($cad)-1); // quito la ultima coma
+				$cad .= "],";
+			}
+
+		$cad = substr($cad,0,strlen($cad)-1);
+		$cad = '{"data":[' . $cad . ']}';
+		return $cad;
+	}
+
 }
 ?>

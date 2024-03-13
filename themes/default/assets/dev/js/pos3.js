@@ -1,4 +1,4 @@
-var Igv = 10;
+var Igv = 18;
 
 function exponer(deb){
     spositems = JSON.parse(get('spositems'));
@@ -176,8 +176,10 @@ function loadItems() {
             //console.log("item_id  :  " + item_id)
 
             //var product_id = item.row.id, 
-            var product_id = item_id
-            var item_type = item.row.type, item_tax_method = parseFloat(item.row.tax_method), combo_items = item.combo_items, item_qty = item.row.qty, item_aqty = parseFloat(item.row.quantity), item_type = item.row.type, item_ds = item.row.discount, item_code = item.row.code, item_name = item.row.name.replace(/"/g, "&#034;").replace(/'/g, "&#039;");
+            var product_id = item_id;
+            var item_type = item.row.type, item_tax_method = parseFloat(item.row.tax_method), combo_items = item.combo_items, item_qty = item.row.qty;
+            var item_aqty = parseFloat(item.row.quantity), item_type = item.row.type, item_ds = item.row.discount, item_code = item.row.code;
+            var item_name = item.row.name.replace(/"/g, "&#034;").replace(/'/g, "&#039;");
             
             var unit_price = parseFloat(item.row.real_unit_price);
             var net_price = unit_price;
@@ -244,7 +246,9 @@ function loadItems() {
             tr_html += '<td class="text-right"><span class="text-right ssubtotal" id="subtotal_' + row_no + '">' + formatMoney(((parseFloat(net_price) + parseFloat(pr_tax_val)) * parseFloat(item_qty))) + '</span></td>';
             
             // Trash
-            tr_html += '<td class="text-center"><i class="fa fa-trash-o tip pointer posdel" id="' + row_no + '" title="Remove"></i></td>';
+            tr_html += '<td class="text-center"><i class="fa fa-trash-o tip pointer posdel" id="' + row_no + '" title="Remove"></i>'+
+                '&nbsp;<i class="glyphicon glyphicon-arrow-right tip pointer" id="s' + row_no + '" title="%" onclick="fm_percent(' + item.item_id + ',' + item.row.real_unit_price + ')"></i></td>';
+                //'<i class="fa fa-trash-o tip pointer posdel" id="s' + row_no + '" title="Remove"></i></td>';
             
             // "Con Igv" :
             //tr_html += '<td style="color:red">' + parseFloat(net_price) + '</td>'
@@ -311,8 +315,11 @@ function loadItems() {
             }
         });
 
-        var ds = get('spos_discount') ? get('spos_discount') :
-        ($('#discount_val').val() ? $('#discount_val').val() : '0');
+        //console.log(spositems)
+        // Creo que aqui es donde debo verificar el ds
+
+        var ds = get('spos_discount') ? get('spos_discount') : ($('#discount_val').val() ? $('#discount_val').val() : '0');
+        console.log("ds:"+ds)
         order_discount = parseFloat(ds);
         if(ds.indexOf("%") !== -1) {
             var pds = ds.split("%");
@@ -321,7 +328,6 @@ function loadItems() {
 
         var ts = get('spos_tax') ? get('spos_tax') : ($('#tax_val').val() ? $('#tax_val').val() : '0');
         order_tax = parseFloat(ts);
-        //console.log("order_tax:"+order_tax)
 
         //if(ts.indexOf("%") !== -1) {
             var pts = ts.split("%");
@@ -425,6 +431,30 @@ function loadItems() {
         if (Settings.display_kb == 1) { display_keyboards(); }
         $('#add_item').focus();
     }
+}
+
+function fm_percent(producto, precio){
+    let valor = prompt("Ingreso el % de descuento");
+    if(valor == null){
+        return false;
+    }
+    /*valor = quitarCaracterX(valor);
+    let porciento = 100 - (1*valor);
+    spositems[producto].row.real_unit_price = ((1 * porciento)/100) * spositems[producto].row.real_unit_price;
+    spositems[producto].row.discount = porciento;*/
+
+    spositems[producto].row.discount = valor;
+
+    store('spositems', JSON.stringify(spositems));
+
+    //**********
+    loadItems()
+    //**********
+}
+
+function quitarCaracterX(cadena) {
+  var nuevaCadena = cadena.replace(/%/g, '');
+  return nuevaCadena;
 }
 
 function chr(i) {
@@ -1392,6 +1422,7 @@ $(document).ready(function () {
         $('#spos_customer').select2('val', spos_customer);
     }
 
+    /*
     $('.treeview').hover(function(e) {
         var wh = $(document).height();
         var top = $(this).offset().top;
@@ -1404,7 +1435,7 @@ $(document).ready(function () {
             $(this).find('a').children('span').removeClass('popup')
             menu.removeClass('popup');
         }
-    });
+    });*/
 
     $('body').click(function(e) {
         if (!$(e.target).hasClass('sidebar-icon') && !$(e.target).hasClass('sb') && $('#categories-list').hasClass('control-sidebar-open')) {
@@ -1416,6 +1447,7 @@ $(document).ready(function () {
         
         if($("#paid_by").val() == "Rappi" || $("#paid_by").val() == "PedidosYa"){
             //**** CAMBIANDO PRECIOS SEGUN TABLA PRECIOS DELIVERY (tec_product_store_qty) 
+            /*
             //cambiar_precios()
             if($("#paid_by").val() == "Rappi"){
                 document.getElementById("cual_delivery").value = "1"
@@ -1423,7 +1455,7 @@ $(document).ready(function () {
 
             if($("#paid_by").val() == "PedidosYa"){
                 document.getElementById("cual_delivery").value = "2"
-            }
+            }*/
         }        
 
         // Validando temas

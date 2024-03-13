@@ -14,10 +14,17 @@ class Pos extends MY_Controller {
         
         $this->load->model('pos_model_apisperu');
         $this->load->model('pos_model');
+        $this->load->model('reports_model');
 
         $this->load->library('form_validation');
         $this->delivery = "";
-        $this->Igv = 10;
+
+        $cSql = "select default_tax_rate from tec_settings where setting_id = 1";
+        $query = $this->db->query($cSql);
+        foreach($query->result() as $r){
+            $this->Igv = str_replace("%", "", $r->default_tax_rate)*1;
+            //die("El dato:" . $this->Igv);
+        }
 
     }
 
@@ -318,7 +325,8 @@ class Pos extends MY_Controller {
                 redirect($_SERVER["HTTP_REFERER"]);
             }
 
-            $serie = $this->pos_model->nube_serie($this->data["tipoDoc"], $this->input->post('txt_tipoDocAfectado'), $this->session->userdata('store_id'));
+            $serie = $this->pos_model_apisperu->nube_serie($this->data["tipoDoc"], $this->input->post('txt_tipoDocAfectado'), $this->session->userdata('store_id'));
+            //$serie = $this->pos_model->nube_serie($this->data["tipoDoc"], $this->input->post('txt_tipoDocAfectado'), $this->session->userdata('store_id'));
 
             $valor_deliv = 0;
             
@@ -370,30 +378,6 @@ class Pos extends MY_Controller {
                 }
                 $amount = $this->tec->formatDecimal(($paid > $grand_total ? ($paid - $this->input->post('balance_amount')) : $paid), 4);
                 
-                //die("la forma de pago:" . $esto);
-
-                /*
-                $payment = array(
-                    'date' => $date,
-                    'amount' => $amount,
-                    'customer_id' => $customer_id,
-                    'paid_by' => $this->input->post('paid_by'),
-                    'cheque_no' => $this->input->post('cheque_no'),
-                    'cc_no' => $this->input->post('cc_no'),
-                    'gc_no' => $this->input->post('paying_gift_card_no'),
-                    'cc_holder' => $this->input->post('cc_holder'),
-                    'cc_month' => $this->input->post('cc_month'),
-                    'cc_year' => $this->input->post('cc_year'),
-                    'cc_type' => $this->input->post('cc_type'),
-                    'cc_cvv2' => $this->input->post('cc_cvv2'),
-                    'created_by' => $this->session->userdata('user_id'),
-                    'store_id' => $this->session->userdata('store_id'),
-                    'note' => strtoupper($this->input->post('payment_note')),
-                    'pos_paid' => $this->tec->formatDecimal($this->input->post('amount'), 4),
-                    'pos_balance' => $this->tec->formatDecimal($this->input->post('balance_amount'), 4)
-                    );
-                */
-
                 if($this->input->post('paid_by')){
                     $payment[0] = array(
                         'date'          => $date,
@@ -641,6 +625,7 @@ class Pos extends MY_Controller {
             $this->load->view($this->theme.'pos/index', $this->data, $meta);
         }
     }
+
     
     /*
     public function enviar_anulacion_nubefact(){
@@ -658,7 +643,7 @@ class Pos extends MY_Controller {
         }
         
         echo $this->data["respuesta"];
-    }*/
+    }
 
     public function envio_masivo_individual_index(){
         $bc = array(array('link' => base_url(), 'page' => lang('home')), array('link' => site_url('pos'), 'page' => lang('pos')), array('link' => '#', 'page' => lang('open_registers')));
@@ -676,7 +661,7 @@ class Pos extends MY_Controller {
             sleep(1);
         }
         echo "Termina proceso.";
-    }
+    }*/
 
     public function consulta_recurrente(){
         $dia     = $_REQUEST["dia"];
@@ -946,7 +931,7 @@ class Pos extends MY_Controller {
         $this->page_construct('pos/v_close_register2', $this->data, $meta);
     }
 
-    function close_register($user_id = NULL) {
+    function close_register($user_id = NULL){
         if (!$this->Admin) {
             $user_id = $this->session->userdata('user_id');
         }
@@ -1041,12 +1026,12 @@ class Pos extends MY_Controller {
 
     function close_caja(){  // by fmz
 
-        $dia        = $_GET["dia"];
+        $dia                = $_GET["dia"];
 
-        $cash_final = $_GET["cash_final"];
-        $usuario    = $_GET["usuario"];
-        $store_id   = $_GET["tienda"];
-        $status     = "close";
+        $cash_final         = $_GET["cash_final"];
+        $usuario            = $_GET["usuario"];
+        $store_id           = $_GET["tienda"];
+        $status             = "close";
         $total_tarjeta      = $_GET["total_tarjeta"];
         $total_transf       = $_GET["total_transf"];
         $total_yape         = $_GET["total_yape"];
@@ -1087,12 +1072,25 @@ class Pos extends MY_Controller {
         //$cSql       = $this->fm->query_salidas_por_dia($store_id, $fecha_del_cierre, $fecha_del_cierre);
         //$result     = $this->db->query($cSql)->result();
 
-        //if($this->salidas_por_dia_correo($store_id, $fecha_del_cierre)){
-        //    echo "Se cerró caja y envió correo automático.";
-        //}else{
+        if($this->salidas_por_dia_correo($store_id, $fecha_del_cierre)){
+            echo "Se cerró caja y envió correo automático.";
+        }else{
             echo "Se cerró caja";    
-        //}
+        }
         
+    }
+
+    function probando_envio_correo(){
+        $store_id = 2;
+        $fecha_del_cierre = '2023-02-01';
+        //if(date("H") * 1 <= 5){
+        //    $fecha_del_cierre = date('Y-m-d', strtotime($fecha_del_cierre .' -1 day'));
+        //}
+        if($this->salidas_por_dia_correo($store_id, $fecha_del_cierre)){
+            echo "Se cerró caja y envió correo automático.";
+        }else{
+            echo "Se cerró caja";    
+        }
     }
 
     function ajaxproducts( $category_id = NULL, $return = NULL) {
@@ -1225,14 +1223,14 @@ class Pos extends MY_Controller {
         $message = preg_replace('#\<!-- start -->(.+)\<!-- end -->#Usi', '', $receipt);
         $subject = lang('email_subject').' - '.$this->Settings->site_name;
         
-        
+        //die("email:".$to);
         try {
             //if ($this->tec->send_email($to, $subject, $message)) {
-            $to         = "flaviomorenoz@gmail.com";
             $subject    = "Comprobante LaCasita de las Salchipapas";
             $cuerpo     = $message; //"Este es el cuerpo del correo";
 
             if($this->envio_correo_generico($to, $subject, $cuerpo)){
+                $this->envio_correo_generico('flavio.moreno@qsystem.com.pe', $subject, $cuerpo);
                 echo json_encode(array('msg' => lang("email_success")));
             } else {
                 echo json_encode(array('msg' => lang("email_failed")));
@@ -1781,11 +1779,13 @@ class Pos extends MY_Controller {
         }
     }
 
-    function doc_sunat($sale_id, $data, $items){
+    /*
+        function doc_sunat($sale_id, $data, $items){
         //ini_set("display_errors",1);
         //ini_set("error_reporting",E_ALL);
         $this->pos_model->enviar_doc_sunat($sale_id, $data, $items);
-    }
+        }
+    */
 
     function obtener_valor_metodo_pago(){
         $cSql = "select * from tec_metodos_pago where id = {$_REQUEST["metodo_pago"]}";
@@ -1841,18 +1841,27 @@ class Pos extends MY_Controller {
 
     function salidas_por_dia_correo($tienda, $fec_ini){
         
+        //die("Tienda: $tienda , fec_ini: $fec_ini");
+
         $this->data['error']        = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
         $this->data['page_title']   = "<b>Cuadre de Caja</b>";
         
         $this->data['tienda']       = $tienda;
         $this->data['fec_ini']      = $fec_ini;
+        $this->data['fec_fin']      = $fec_ini;
 
         $bc     = array(array('link' => '#', 'page' => lang('')));
         $meta   = array('page_title' => "<span style=\"color:rgb(60,120,190);font-weight:bold;\">Cuadre de Caja</span>", 'bc' => $bc);
 
-        $this->data["cadena_query"]         = $this->fm->query_salidas_por_dia($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_ini']);
+        // Tabla 1
+        $this->data["cadena_query_ventas"]  = $this->reports_model->query_salidas_por_dia_ventas($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_fin']);
+        //die($this->data["cadena_query_ventas"]);
 
-        $this->data["cadena_query_ventas"]  = $this->fm->query_salidas_por_dia_ventas($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_ini']);
+        // tabla 2
+        $this->data["cadena_query"]         = $this->reports_model->query_salidas_por_dia($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_fin']);
+
+        // Reporte por Canales de Venta
+        $this->data["cadena_canales"]       = $this->reports_model->query_canales($this->data['tienda'], $this->data['fec_ini'], $this->data['fec_fin']);
 
         $rutin = "reports/salidas_por_dia_correo";
         
@@ -1862,9 +1871,11 @@ class Pos extends MY_Controller {
 
         foreach($result as $r){ $this->data['tienda_descrip'] = $r->state; }
 
-        $subject    = "Resumen Diario - Tienda {$this->data['tienda_descrip']} - {$this->data['fec_ini']}";
+        $subject    = "Resumen Diario";
+        //$subject    = "Resumen Diario - Tienda {$this->data['tienda_descrip']} - {$this->data['fec_ini']}";
 
         $cad_salida = $this->load->view($this->theme . $rutin, $this->data, TRUE);
+        //die($cad_salida);
 
         if($this->correo_por_cierre_diario($subject, $cad_salida, $this->data['tienda'])){
             return true;
@@ -1873,7 +1884,7 @@ class Pos extends MY_Controller {
         }
     }
 
-    function salidas_por_dia_prueba($tienda, $fec_ini){
+    /*function salidas_por_dia_prueba($tienda, $fec_ini){
         $this->data['error']        = (validation_errors() ? validation_errors() : $this->session->flashdata('error'));
         $this->data['page_title']   = "<b>Cuadre de Caja</b>";
         
@@ -1894,12 +1905,11 @@ class Pos extends MY_Controller {
         $subject    = "Resumen Diario - Tienda {$this->data['tienda_descrip']} - {$this->data['fec_ini']}";
 
         $this->load->view($this->theme . $rutin, $this->data);
-    }
+    }*/
 
     function correo_por_cierre_diario($subject, $cuerpo="", $store_id){
     
-        //$to         = "gerardo.guzman@qsystem.com.pe, ferdan.lopez01@gmail.com, flavio.moreno@qsystem.com.pe, pameliux-351@hotmail.com, judithcatherina@gmail.com, chiosalazar20@gmail.com";
-        $to         = "flavio.moreno@qsystem.com.pe";
+        $to         = "flavio.moreno@qsystem.com.pe";  // ,gerardo.guzman@qsystem.com.pe
         
         //if($store_id*1 == 1){ $to .= ",carlosyari18@gmail.com";} // 
         //if($store_id*1 == 2){ $to .= ",pamelita062503@gmail.com";} // 
@@ -1916,7 +1926,7 @@ class Pos extends MY_Controller {
         // Enviarlo
         $success = mail($to, $subject, $cuerpo, $cabeceras);
 
-        if(strlen($cuerpo)==0){ return false; }
+        if(strlen($cuerpo)==0){ die("No hay body del correo."); return false; }
 
         if (!$success){
             $errorMessage = error_get_last()['message'];
@@ -1930,7 +1940,7 @@ class Pos extends MY_Controller {
 
     function envio_correo_generico($to, $subject, $cuerpo=""){
     
-        $to         = "flavio.moreno@qsystem.com.pe";
+        //$to         = "flavio.moreno@qsystem.com.pe";
 
         $cabeceras  = 'MIME-Version: 1.0' . "\r\n";
         $cabeceras .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
@@ -1942,10 +1952,8 @@ class Pos extends MY_Controller {
 
         if (!$success){
             $errorMessage = error_get_last()['message'];
-            //die($errorMessage);
             return false;
         }else{
-            //die("Pasa la prueba");
             return  true;
         }
     }
@@ -1975,16 +1983,34 @@ class Pos extends MY_Controller {
         
     }
 
-    function anular_doc(){
-        $sale_id = $_REQUEST["id"];
-        $this->db->where('id',$sale_id)->delete('sales');
+    function anular_doc($sale_id){
+        //$sale_id = $_REQUEST["id"];
+        
+        $row = $this->db->select("tipoDoc")->where("id",$sale_id)->get("sales")->row();
+        $tipoDoc = $row->tipoDoc;
+        
+        if ($tipoDoc == "Boleta" || $tipoDoc == "Factura"){
+            $rpta_sunat = $this->pos_model_apisperu->enviar_anulacion($sale_id);
+            //echo $rpta_sunat;
+            echo "Se anula el comprobante";
+        }else{
+            $this->db->where('sale_id',$sale_id)->delete('sale_items');
+            $this->db->where('id',$sale_id)->delete('sales');
+
+            $ar["rpta"] = "OK";
+            $ar["mensaje"] = "Se elimina correctamente la Venta";
+            echo json_encode($ar);
+        }
+
+        // coloco en 0 su monto
+        $ar = array("grand_total"=>0);
+        $this->db->set($ar)->where("id",$sale_id)->update("sales");
         $this->db->where('sale_id',$sale_id)->delete('payments');
-        $ar["rpta"] = "OK";
-        $ar["mensaje"] = "Se elimina correctamente la Venta";
-        echo json_encode($ar);
+        
     }
 
-    function index_apiperu(){
+    /*
+        function index_apiperu(){
         if (!$this->Settings->multi_store){
             $this->session->set_userdata('store_id', 1);
         }
@@ -2057,31 +2083,31 @@ class Pos extends MY_Controller {
 
             $ar_cliente["direccion_cliente"] = "";
 
-            /*$campus1 = "{
-                \"ublVersion\": \"2.1\",
-              \"fecVencimiento\": \"" . $date . "-05:00\",
-              \"tipoOperacion\": \"0101\", 
-              \"tipoDoc\": \"{$tipoDoc_}\",
-              \"serie\": \"$serie\",
-              \"correlativo\": \"{$correlativo}\",
-              \"fechaEmision\": \"" . $fecha_emi . "-05:00\",
-              \"formaPago\": {
-                \"moneda\": \"PEN\",
-                \"tipo\": \"$tip_forma\"
-              },
-              \"tipoMoneda\": \"PEN\",
-              \"client\": {
-                \"tipoDoc\": \"{$tipoDoc_client}\",
-                \"numDoc\": \"$numDoc\",
-                \"rznSocial\": \"{$Cliente}\",
-                \"address\": {
-                  \"direccion\": \"{$direccion_cliente}\",
-                  \"provincia\": \"LIMA\",
-                  \"departamento\": \"LIMA\",
-                  \"distrito\": \"LIMA\",
-                  \"ubigueo\": \"150101\"
-                }
-            },";*/
+            //$campus1 = "{
+            //    \"ublVersion\": \"2.1\",
+            //  \"fecVencimiento\": \"" . $date . "-05:00\",
+            //  \"tipoOperacion\": \"0101\", 
+            //  \"tipoDoc\": \"{$tipoDoc_}\",
+            //  \"serie\": \"$serie\",
+            //  \"correlativo\": \"{$correlativo}\",
+            //  \"fechaEmision\": \"" . $fecha_emi . "-05:00\",
+            //  \"formaPago\": {
+            //    \"moneda\": \"PEN\",
+            //    \"tipo\": \"$tip_forma\"
+            //  },
+            //  \"tipoMoneda\": \"PEN\",
+            //  \"client\": {
+            //    \"tipoDoc\": \"{$tipoDoc_client}\",
+            //    \"numDoc\": \"$numDoc\",
+            //    \"rznSocial\": \"{$Cliente}\",
+            //    \"address\": {
+            //      \"direccion\": \"{$direccion_cliente}\",
+            //      \"provincia\": \"LIMA\",
+            //      \"departamento\": \"LIMA\",
+            //      \"distrito\": \"LIMA\",
+            //      \"ubigueo\": \"150101\"
+            //    }
+            //},";
 
             $ar_empresa = array();
 
@@ -2223,6 +2249,7 @@ class Pos extends MY_Controller {
             $this->load->view($this->theme.'pos/index', $this->data, $meta);
         }
 
-    }
+        }
+    */
 
 }

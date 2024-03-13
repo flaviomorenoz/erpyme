@@ -5,7 +5,7 @@ class Pos_model extends CI_Model
 
     public function __construct() {
         parent::__construct();
-        $this->Igv = 10;
+        $this->Igv = 18;
     }
 
     public function getProductNames($term, $limit = 10) {
@@ -772,7 +772,7 @@ class Pos_model extends CI_Model
         }
         return false;
     }
-*/
+
     function enviar_doc_sunat_nubefact_individual($sale_id, $activar=false){
         
         $result = $this->db->select("tipoDoc, customer_id, store_id, serie, total, total_tax, grand_total, correlativo, total_discount, tipoDocAfectado, serieDocfectado, numDocfectado, codMotivo")
@@ -898,7 +898,6 @@ class Pos_model extends CI_Model
             return "No se pudo, por vacío";
         }
     }
-
     function analizar_rpta_sunat($msg_sunat, $sale_id){
         //{"code":401,"message":"Expired JWT Token"}
         //$msg_sunat = 'description":"La Boleta ha sido aceptada en Sunat."';
@@ -977,12 +976,12 @@ class Pos_model extends CI_Model
         
         $leer_respuesta     = json_decode($respuesta, true);
         
-        /*if (isset($leer_respuesta['errors'])) {
+        //if (isset($leer_respuesta['errors'])) {
         
-            $mensaje = $msg_sunat;
+        //    $mensaje = $msg_sunat;
             
-            return false;
-        } else {*/
+        //    return false;
+        //} else {
         
             $ticket             = $leer_respuesta["sunat_ticket_numero"];
             $enlace             = $leer_respuesta["enlace"];
@@ -1004,7 +1003,7 @@ class Pos_model extends CI_Model
 
         //}
     }
-
+*/
     function marcar_envio_sunat($sale_id, $valor='0', $dir_comprobante='', $codigo_hash=''){
         $datos = array(
                 "envio_electronico" =>$valor,
@@ -1019,229 +1018,224 @@ class Pos_model extends CI_Model
         return true;
     }
 
-    public function enviar_doc_sunat_nubefact($sale_id, $data, $items, $activar=true){
+    /*
+        public function enviar_doc_sunat_nubefact($sale_id, $data, $items, $activar=true){
 
-        if($data["tipo_comprobante"] == "Boleta"){
-            $cDocumento = $data["dni"];
-            $el_tipo = '1'; // dni
-        }else{
-            $cDocumento = $data["ruc"];
-            $el_tipo = '6'; // ruc
-        }
-
-        // INICIANDO EL ARRAY DE ITEMS PARA EL JSON *******************
-        $total_gravada  = $total_igv = $total = 0;
-        $limiteI        = count($items);
-        for($i = 0; $i < $limiteI; $i++){
-            $items_[] = array(
-                "unidad_de_medida"          => "NIU",
-                "codigo"                    => $items[$i]["product_code"],    //"001",
-                "descripcion"               => $items[$i]["product_name"],    //"DETALLE DEL PRODUCTO",
-                "cantidad"                  => $items[$i]["quantity"],        // Cantidad
-                "valor_unitario"            => $items[$i]["net_unit_price"],  // Precio unitario sin IGV 
-                "precio_unitario"           => $items[$i]["unit_price"],      // Precio unitario con IGV
-                "descuento"                 => $items[$i]["discount"],        // Descuento
-                "subtotal"                  => ($items[$i]["net_unit_price"] * $items[$i]["quantity"] * 1)."",
-                "tipo_de_igv"               => "1",
-                "igv"                       => $items[$i]["item_tax"],         // Precio_sin_IGV * Cantidad * 0.18
-                "total"                     => $items[$i]["subtotal"],         // Precio_con_IGV * Cantidad
-                "anticipo_regularizacion"   => "false",
-                "anticipo_documento_serie"  => "",
-                "anticipo_documento_numero" => ""
-            );
-        };
-
-        // INICIANDO EL JSON EN SI **********************************
-        $tipo   = $this->nube_tipo_de_comprobante($data["tipo_comprobante"]);  // $tipo_documento
-        
-        $serie = $data["serie"];
-
-        $tipo_de_nota_de_credito            = "";
-        $tipo_de_nota_de_debito             = "";
-
-        if($tipo == '3' || $tipo == '4'){ // de credito y debito respectivamente
-            $documento_que_se_modifica_tipo     = $data['tipoDocAfectado'];
-            $documento_que_se_modifica_serie    = $data['serieDocfectado']; 
-            $documento_que_se_modifica_numero   = $data['numDocfectado'];
-            
-            if($tipo == '3'){ $tipo_de_nota_de_credito            = $data['codMotivo'];}
-            if($tipo == '4'){ $tipo_de_nota_de_debito             = $data['codMotivo'];}
-            
-        }else{
-            $documento_que_se_modifica_tipo     = "";
-            $documento_que_se_modifica_serie    = "";
-            $documento_que_se_modifica_numero   = "";
-        }
-
-        $numero = $data["correlativo"];  // 
-
-        $sunat_transaction           = "1"; // venta interna.
-        $cliente_tipo_de_documento   = $el_tipo;  // 1 DNI, 6 RUC
-        $cliente_numero_de_documento = $cDocumento;
-        
-        $cliente_denominacion   = $data["cliente_name"];
-        $cliente_direccion      = $data["cliente_direccion"];
-        $cliente_email          = $data["cliente_email"];
-        $cliente_email_1        = "";
-        $cliente_email_2        = "";
-        $fecha_de_emision       = date("Y-m-d");
-        $fecha_de_vencimiento   = date("Y-m-d");
-        $moneda                 = "1"; // soles
-        $tipo_de_cambio         = "";
-        $porcentaje_de_igv      = $this->Igv;       // ES SOLO EL PORCENTAJE DEL IGV
-        $descuento_global       = "";
-        $total_descuento        = $data["total_discount"];
-        $total_anticipo         = "";
-        $total_gravada          = $data["total"];      // TOTAL DE LA FACTURA SIN IGV
-        $total_inafecta         = "";
-
-        $total_exonerada        = "";
-        $total_igv              = $data["total_tax"];  // TOTAL IMPUESTO
-        $total_gratuita         = "";
-        $total_otros_cargos     = "";
-        $total                  = $data["grand_total"]; // TOTAL DE LA FACTURA (INCLUYE IGV)
-        $percepcion_tipo        = "";
-        $percepcion_base_imponible = "";
-        $total_percepcion       = "";
-        $total_incluido_percepcion = "";
-        $detraccion             = "false";
-        $observaciones          = "";
-        
-        $enviar_automaticamente_a_la_sunat = "true";
-        $enviar_automaticamente_al_cliente = "false";
-        $codigo_unico                      = "";
-        $condiciones_de_pago               = "";
-        $medio_de_pago                     = "";
-        $placa_vehiculo                    = "";
-        $orden_compra_servicio             = "";
-        $tabla_personalizada_codigo        = "";
-        $formato_de_pdf                    = "";
-
-        $respuesta = "";
-        
-        //require_once("paquete_json.php"); // aqui esta la variable respuesta
-
-
-        $ruta = "https://api.nubefact.com/api/v1/ee047059-16bb-4595-adb6-fc5e559ee23f";
-
-        //TOKEN para enviar documentos
-        //$token = "f8011ff38c484ec4ac05a21d011d2b4b1ee2d9dca8164213a25252c32124987d";
-        $token = "1ebd60ff9fcb4411b26b9cc192bb480156e131c38fcf4a18b7b3636ac1d4fdec";
-
-        /*
-        #########################################################
-        #### PASO 2: GENERAR EL ARCHIVO PARA ENVIAR A NUBEFACT ####
-        +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        # - MANUAL para archivo JSON en el link: https://goo.gl/WHMmSb
-        # - MANUAL para archivo TXT en el link: https://goo.gl/Lz7hAq
-        +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-         */
-
-        $ar_obj = array(
-            "operacion"                         => "generar_comprobante",
-            "tipo_de_comprobante"               => $tipo, /*"1",*/
-            "serie"                             => $serie, /*"FFF1",*/
-            "numero"                            => $numero, /*"1",*/
-            "sunat_transaction"                 => "1",
-            "cliente_tipo_de_documento"         => $cliente_tipo_de_documento,
-            "cliente_numero_de_documento"       => $cliente_numero_de_documento,
-            "cliente_denominacion"              => $cliente_denominacion,
-            "cliente_direccion"                 => $cliente_direccion,
-            "cliente_email"                     => "",
-            "cliente_email_1"                   => "",
-            "cliente_email_2"                   => "",
-            "fecha_de_emision"                  => $fecha_de_emision,
-            "fecha_de_vencimiento"              => $fecha_de_vencimiento, 
-            "moneda"                            => $moneda,
-            "tipo_de_cambio"                    => "",
-            "porcentaje_de_igv"                 => $porcentaje_de_igv."",
-            "descuento_global"                  => $total_descuento."",
-            "total_descuento"                   => $total_descuento."",
-            "total_anticipo"                    => "",
-            "total_gravada"                     => $total_gravada,
-            "total_inafecta"                    => "",
-            "total_exonerada"                   => "",
-            "total_igv"                         => $total_igv,
-            "total_gratuita"                    => "",
-            "total_otros_cargos"                => "",
-            "total"                             => $total,
-            "percepcion_tipo"                   => "",
-            "percepcion_base_imponible"         => "",
-            "total_percepcion"                  => "",
-            "total_incluido_percepcion"         => "",
-            "detraccion"                        => "false",
-            "observaciones"                     => "",
-            "documento_que_se_modifica_tipo"    => $documento_que_se_modifica_tipo,
-            "documento_que_se_modifica_serie"   => $documento_que_se_modifica_serie,
-            "documento_que_se_modifica_numero"  => $documento_que_se_modifica_numero,
-            "tipo_de_nota_de_credito"           => $tipo_de_nota_de_credito,
-            "tipo_de_nota_de_debito"            => $tipo_de_nota_de_debito,
-            "enviar_automaticamente_a_la_sunat" => "true",
-            "enviar_automaticamente_al_cliente" => "false",
-            "codigo_unico"                      => "",
-            "condiciones_de_pago"               => "",
-            "medio_de_pago"                     => "",
-            "placa_vehiculo"                    => "",
-            "orden_compra_servicio"             => "",
-            "tabla_personalizada_codigo"        => "",
-            "formato_de_pdf"                    => "",
-            "items" => $items_
-        );
-
-        $this->el_json = print_r($ar_obj, true) . "\n\n";  // Para colocarlo en un archivo de texto
-        $data_json = json_encode($ar_obj);
-
-        $gis       = fopen("log/antes_de" . date("Y-m-d-His") . "_" . $sale_id . ".txt","a+");
-        fputs($gis, $data_json);
-        fclose($gis);
-
-        $respuesta = "";
-        
-        //Invocamos el servicio de NUBEFACT
-        if($activar){
-            /*
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $ruta);
-            curl_setopt(
-                $ch, CURLOPT_HTTPHEADER, array(
-                    'Authorization: Token token="'.$token.'"',
-                    'Content-Type: application/json',
-                )
-            );
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_POSTFIELDS,$data_json);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $respuesta  = curl_exec($ch);
-            
-            
-            if($respuesta === false){
-                $this->fm->traza('Curl error: ' . curl_error($ch));
+            if($data["tipo_comprobante"] == "Boleta"){
+                $cDocumento = $data["dni"];
+                $el_tipo = '1'; // dni
+            }else{
+                $cDocumento = $data["ruc"];
+                $el_tipo = '6'; // ruc
             }
 
-            curl_close($ch);
-            */
-        }
+            // INICIANDO EL ARRAY DE ITEMS PARA EL JSON *******************
+            $total_gravada  = $total_igv = $total = 0;
+            $limiteI        = count($items);
+            for($i = 0; $i < $limiteI; $i++){
+                $items_[] = array(
+                    "unidad_de_medida"          => "NIU",
+                    "codigo"                    => $items[$i]["product_code"],    //"001",
+                    "descripcion"               => $items[$i]["product_name"],    //"DETALLE DEL PRODUCTO",
+                    "cantidad"                  => $items[$i]["quantity"],        // Cantidad
+                    "valor_unitario"            => $items[$i]["net_unit_price"],  // Precio unitario sin IGV 
+                    "precio_unitario"           => $items[$i]["unit_price"],      // Precio unitario con IGV
+                    "descuento"                 => $items[$i]["discount"],        // Descuento
+                    "subtotal"                  => ($items[$i]["net_unit_price"] * $items[$i]["quantity"] * 1)."",
+                    "tipo_de_igv"               => "1",
+                    "igv"                       => $items[$i]["item_tax"],         // Precio_sin_IGV * Cantidad * 0.18
+                    "total"                     => $items[$i]["subtotal"],         // Precio_con_IGV * Cantidad
+                    "anticipo_regularizacion"   => "false",
+                    "anticipo_documento_serie"  => "",
+                    "anticipo_documento_numero" => ""
+                );
+            };
 
-
-        // poner el contenido de un fichero en una cadena
-        /*
-            $nombre_fichero = "log/ejemplo_aceptado.txt";
-            $gestor = fopen($nombre_fichero, "r");
-            $respuesta = fread($gestor, filesize($nombre_fichero));
-            fclose($gestor);
+            // INICIANDO EL JSON EN SI **********************************
+            $tipo   = $this->nube_tipo_de_comprobante($data["tipo_comprobante"]);  // $tipo_documento
             
-            $g = fopen("log/" . "archivo.txt","a+");
-            fputs($g,print_r($ar_obj,true));
-            fputs($g, "\n\n");
-            fputs($g,print_r($items_,true));
-            fclose($g);
-        */
+            $serie = $data["serie"];
 
-        return $respuesta;
-    }
+            $tipo_de_nota_de_credito            = "";
+            $tipo_de_nota_de_debito             = "";
 
-    public function enviar_anulacion_nubefact($sale_id, $activar=true){
+            if($tipo == '3' || $tipo == '4'){ // de credito y debito respectivamente
+                $documento_que_se_modifica_tipo     = $data['tipoDocAfectado'];
+                $documento_que_se_modifica_serie    = $data['serieDocfectado']; 
+                $documento_que_se_modifica_numero   = $data['numDocfectado'];
+                
+                if($tipo == '3'){ $tipo_de_nota_de_credito            = $data['codMotivo'];}
+                if($tipo == '4'){ $tipo_de_nota_de_debito             = $data['codMotivo'];}
+                
+            }else{
+                $documento_que_se_modifica_tipo     = "";
+                $documento_que_se_modifica_serie    = "";
+                $documento_que_se_modifica_numero   = "";
+            }
+
+            $numero = $data["correlativo"];  // 
+
+            $sunat_transaction           = "1"; // venta interna.
+            $cliente_tipo_de_documento   = $el_tipo;  // 1 DNI, 6 RUC
+            $cliente_numero_de_documento = $cDocumento;
+            
+            $cliente_denominacion   = $data["cliente_name"];
+            $cliente_direccion      = $data["cliente_direccion"];
+            $cliente_email          = $data["cliente_email"];
+            $cliente_email_1        = "";
+            $cliente_email_2        = "";
+            $fecha_de_emision       = date("Y-m-d");
+            $fecha_de_vencimiento   = date("Y-m-d");
+            $moneda                 = "1"; // soles
+            $tipo_de_cambio         = "";
+            $porcentaje_de_igv      = $this->Igv;       // ES SOLO EL PORCENTAJE DEL IGV
+            $descuento_global       = "";
+            $total_descuento        = $data["total_discount"];
+            $total_anticipo         = "";
+            $total_gravada          = $data["total"];      // TOTAL DE LA FACTURA SIN IGV
+            $total_inafecta         = "";
+
+            $total_exonerada        = "";
+            $total_igv              = $data["total_tax"];  // TOTAL IMPUESTO
+            $total_gratuita         = "";
+            $total_otros_cargos     = "";
+            $total                  = $data["grand_total"]; // TOTAL DE LA FACTURA (INCLUYE IGV)
+            $percepcion_tipo        = "";
+            $percepcion_base_imponible = "";
+            $total_percepcion       = "";
+            $total_incluido_percepcion = "";
+            $detraccion             = "false";
+            $observaciones          = "";
+            
+            $enviar_automaticamente_a_la_sunat = "true";
+            $enviar_automaticamente_al_cliente = "false";
+            $codigo_unico                      = "";
+            $condiciones_de_pago               = "";
+            $medio_de_pago                     = "";
+            $placa_vehiculo                    = "";
+            $orden_compra_servicio             = "";
+            $tabla_personalizada_codigo        = "";
+            $formato_de_pdf                    = "";
+
+            $respuesta = "";
+            
+            //require_once("paquete_json.php"); // aqui esta la variable respuesta
+
+
+            $ruta = "https://api.nubefact.com/api/v1/ee047059-16bb-4595-adb6-fc5e559ee23f";
+
+            //TOKEN para enviar documentos
+            //$token = "f8011ff38c484ec4ac05a21d011d2b4b1ee2d9dca8164213a25252c32124987d";
+            $token = "1ebd60ff9fcb4411b26b9cc192bb480156e131c38fcf4a18b7b3636ac1d4fdec";
+
+            
+            $ar_obj = array(
+                "operacion"                         => "generar_comprobante",
+                "tipo_de_comprobante"               => $tipo, 
+                "serie"                             => $serie, 
+                "numero"                            => $numero, 
+                "sunat_transaction"                 => "1",
+                "cliente_tipo_de_documento"         => $cliente_tipo_de_documento,
+                "cliente_numero_de_documento"       => $cliente_numero_de_documento,
+                "cliente_denominacion"              => $cliente_denominacion,
+                "cliente_direccion"                 => $cliente_direccion,
+                "cliente_email"                     => "",
+                "cliente_email_1"                   => "",
+                "cliente_email_2"                   => "",
+                "fecha_de_emision"                  => $fecha_de_emision,
+                "fecha_de_vencimiento"              => $fecha_de_vencimiento, 
+                "moneda"                            => $moneda,
+                "tipo_de_cambio"                    => "",
+                "porcentaje_de_igv"                 => $porcentaje_de_igv."",
+                "descuento_global"                  => $total_descuento."",
+                "total_descuento"                   => $total_descuento."",
+                "total_anticipo"                    => "",
+                "total_gravada"                     => $total_gravada,
+                "total_inafecta"                    => "",
+                "total_exonerada"                   => "",
+                "total_igv"                         => $total_igv,
+                "total_gratuita"                    => "",
+                "total_otros_cargos"                => "",
+                "total"                             => $total,
+                "percepcion_tipo"                   => "",
+                "percepcion_base_imponible"         => "",
+                "total_percepcion"                  => "",
+                "total_incluido_percepcion"         => "",
+                "detraccion"                        => "false",
+                "observaciones"                     => "",
+                "documento_que_se_modifica_tipo"    => $documento_que_se_modifica_tipo,
+                "documento_que_se_modifica_serie"   => $documento_que_se_modifica_serie,
+                "documento_que_se_modifica_numero"  => $documento_que_se_modifica_numero,
+                "tipo_de_nota_de_credito"           => $tipo_de_nota_de_credito,
+                "tipo_de_nota_de_debito"            => $tipo_de_nota_de_debito,
+                "enviar_automaticamente_a_la_sunat" => "true",
+                "enviar_automaticamente_al_cliente" => "false",
+                "codigo_unico"                      => "",
+                "condiciones_de_pago"               => "",
+                "medio_de_pago"                     => "",
+                "placa_vehiculo"                    => "",
+                "orden_compra_servicio"             => "",
+                "tabla_personalizada_codigo"        => "",
+                "formato_de_pdf"                    => "",
+                "items" => $items_
+            );
+
+            $this->el_json = print_r($ar_obj, true) . "\n\n";  // Para colocarlo en un archivo de texto
+            $data_json = json_encode($ar_obj);
+
+            $gis       = fopen("log/antes_de" . date("Y-m-d-His") . "_" . $sale_id . ".txt","a+");
+            fputs($gis, $data_json);
+            fclose($gis);
+
+            $respuesta = "";
+            
+            //Invocamos el servicio de NUBEFACT
+            if($activar){
+                
+                //$ch = curl_init();
+                //curl_setopt($ch, CURLOPT_URL, $ruta);
+                //curl_setopt(
+                //    $ch, CURLOPT_HTTPHEADER, array(
+                //        'Authorization: Token token="'.$token.'"',
+                //        'Content-Type: application/json',
+                //    )
+                //);
+                //curl_setopt($ch, CURLOPT_POST, 1);
+                //curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                //curl_setopt($ch, CURLOPT_POSTFIELDS,$data_json);
+                //curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                //$respuesta  = curl_exec($ch);
+                
+                
+                //if($respuesta === false){
+                //    $this->fm->traza('Curl error: ' . curl_error($ch));
+                //}
+
+                //curl_close($ch);
+                
+            }
+
+
+            // poner el contenido de un fichero en una cadena
+            
+            //    $nombre_fichero = "log/ejemplo_aceptado.txt";
+            //    $gestor = fopen($nombre_fichero, "r");
+            //    $respuesta = fread($gestor, filesize($nombre_fichero));
+            //    fclose($gestor);
+            //    
+            //    $g = fopen("log/" . "archivo.txt","a+");
+            //    fputs($g,print_r($ar_obj,true));
+            //    fputs($g, "\n\n");
+            //    fputs($g,print_r($items_,true));
+            //    fclose($g);
+            
+
+            return $respuesta;
+        }
+    */
+
+    /*
+        public function enviar_anulacion_nubefact($sale_id, $activar=true){
 
         // INICIANDO EL JSON EN SI **********************************
 
@@ -1272,15 +1266,6 @@ class Pos_model extends CI_Model
             //TOKEN para enviar documentos
             $token = "1ebd60ff9fcb4411b26b9cc192bb480156e131c38fcf4a18b7b3636ac1d4fdec";
 
-            /*
-            #########################################################
-            #### PASO 2: GENERAR EL ARCHIVO PARA ENVIAR A NUBEFACT ####
-            +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            # - MANUAL para archivo JSON en el link: https://goo.gl/WHMmSb
-            # - MANUAL para archivo TXT en el link: https://goo.gl/Lz7hAq
-            +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-             */
-
             $ar_obj = array(
                 "operacion"                         => "generar_anulacion",
                 "tipo_de_comprobante"               => $tipo, 
@@ -1301,30 +1286,29 @@ class Pos_model extends CI_Model
             
             //Invocamos el servicio de NUBEFACT
             if($activar){
-                /*
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $ruta);
-                curl_setopt(
-                    $ch, CURLOPT_HTTPHEADER, array(
-                        'Authorization: Token token="'.$token.'"',
-                        'Content-Type: application/json',
-                    )
-                );
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                curl_setopt($ch, CURLOPT_POSTFIELDS,$data_json);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                $respuesta  = curl_exec($ch);
                 
+                //$ch = curl_init();
+                //curl_setopt($ch, CURLOPT_URL, $ruta);
+                //curl_setopt(
+                //    $ch, CURLOPT_HTTPHEADER, array(
+                //        'Authorization: Token token="'.$token.'"',
+                //        'Content-Type: application/json',
+                //    )
+                //);
+                //curl_setopt($ch, CURLOPT_POST, 1);
+                //curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                //curl_setopt($ch, CURLOPT_POSTFIELDS,$data_json);
+                //curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                //$respuesta  = curl_exec($ch);
+                ////
+                ////
+                //if($respuesta === false){
+                //   $this->fm->traza('Curl error: ' . curl_error($ch));
+                //}
+                //
+                //curl_close($ch);
                 
-                if($respuesta === false){
-                    $this->fm->traza('Curl error: ' . curl_error($ch));
-                }
-
-                curl_close($ch);
-                */
             }
-            
             
             $respuesta = '{
                 "numero": 1,
@@ -1354,10 +1338,10 @@ class Pos_model extends CI_Model
 
             return $un_msg;
         }
+        }
+    
 
-    }
-
-    public function nube_tipo_de_comprobante($tipo){
+        public function nube_tipo_de_comprobante($tipo){
         // 1 = FACTURA  2 = BOLETA  3 = NOTA DE CRÉDITO  4 = NOTA DE DÉBITO
         if($tipo == 'Boleta'){ // Boleta
             return '2';
@@ -1370,69 +1354,69 @@ class Pos_model extends CI_Model
         }else{
             return '99';
         }
-    }
-
-    public function nube_serie($tipo, $tipoDocAfectado="", $tienda=0){
-
-        //die("Tienda:".gettype($tienda). " - ".$tienda);
-
-        if($tienda * 1 == 2){
-            if($tipo == "Boleta"){
-                return "BBB1"; // BOLETA DE VENTA B003 - 00002471 08/11/2021 
-            }elseif($tipo == "Factura"){
-                return "FFF1"; // Nº FACTURA F002 - 00000022 07/11/2021
-            }elseif($tipo == 'Ticket'){
-                return "TK1";
-            }else{
-                if(strlen($tipoDocAfectado) > 0){
-                    if($tipoDocAfectado == '1'){ return "FFF1"; } // FFF1
-                    if($tipoDocAfectado == '2'){ return "BBB1"; } // BBB1
-                }                
-            }
         }
 
-        if($tienda * 1 == 3){
-            if($tipo == "Boleta"){
-                return "BBB2"; // BOLETA DE VENTA B003 - 00002471 08/11/2021 
-            }elseif($tipo == "Factura"){
-                return "FFF2"; // Nº FACTURA F002 - 00000022 07/11/2021
-            }elseif($tipo == 'Ticket'){
-                return "TK2";
-            }else{
-                if(strlen($tipoDocAfectado) > 0){
-                    if($tipoDocAfectado == '1'){ return "FFF2"; } // FFF1
-                    if($tipoDocAfectado == '2'){ return "BBB2"; } // BBB1
-                }                
+        public function nube_serie($tipo, $tipoDocAfectado="", $tienda=0){
+
+            //die("Tienda:".gettype($tienda). " - ".$tienda);
+
+            if($tienda * 1 == 2){
+                if($tipo == "Boleta"){
+                    return "BBB1"; // BOLETA DE VENTA B003 - 00002471 08/11/2021 
+                }elseif($tipo == "Factura"){
+                    return "FFF1"; // Nº FACTURA F002 - 00000022 07/11/2021
+                }elseif($tipo == 'Ticket'){
+                    return "TK1";
+                }else{
+                    if(strlen($tipoDocAfectado) > 0){
+                        if($tipoDocAfectado == '1'){ return "FFF1"; } // FFF1
+                        if($tipoDocAfectado == '2'){ return "BBB1"; } // BBB1
+                    }                
+                }
             }
+
+            if($tienda * 1 == 3){
+                if($tipo == "Boleta"){
+                    return "BBB2"; // BOLETA DE VENTA B003 - 00002471 08/11/2021 
+                }elseif($tipo == "Factura"){
+                    return "FFF2"; // Nº FACTURA F002 - 00000022 07/11/2021
+                }elseif($tipo == 'Ticket'){
+                    return "TK2";
+                }else{
+                    if(strlen($tipoDocAfectado) > 0){
+                        if($tipoDocAfectado == '1'){ return "FFF2"; } // FFF1
+                        if($tipoDocAfectado == '2'){ return "BBB2"; } // BBB1
+                    }                
+                }
+            }
+
+            if($tienda * 1 == 1){
+                if($tipo == "Boleta"){
+                    return "BBB3"; // BOLETA DE VENTA B003 - 00002471 08/11/2021 
+                }elseif($tipo == "Factura"){
+                    return "FFF3"; // Nº FACTURA F002 - 00000022 07/11/2021
+                }elseif($tipo == 'Ticket'){
+                    return "TK3";
+                }else{
+                    if(strlen($tipoDocAfectado) > 0){
+                        if($tipoDocAfectado == '1'){ return "FFF3"; } // FFF1
+                        if($tipoDocAfectado == '2'){ return "BBB3"; } // BBB1
+                    }                
+                }
+            }
+
         }
 
-        if($tienda * 1 == 1){
-            if($tipo == "Boleta"){
-                return "BBB3"; // BOLETA DE VENTA B003 - 00002471 08/11/2021 
-            }elseif($tipo == "Factura"){
-                return "FFF3"; // Nº FACTURA F002 - 00000022 07/11/2021
-            }elseif($tipo == 'Ticket'){
-                return "TK3";
-            }else{
-                if(strlen($tipoDocAfectado) > 0){
-                    if($tipoDocAfectado == '1'){ return "FFF3"; } // FFF1
-                    if($tipoDocAfectado == '2'){ return "BBB3"; } // BBB1
-                }                
-            }
+        public function nube_consultas($tipo_comprobante, $serie, $numero){
+            $ar = array(
+                "operacion"             => "consultar_comprobante",
+                "tipo_de_comprobante"   => $tipo_comprobante,
+                "serie"                 => $serie,
+                "numero"                => $numero
+            );
+            return json_encode($ar);
         }
-
-    }
-
-    public function nube_consultas($tipo_comprobante, $serie, $numero){
-        $ar = array(
-            "operacion"             => "consultar_comprobante",
-            "tipo_de_comprobante"   => $tipo_comprobante,
-            "serie"                 => $serie,
-            "numero"                => $numero
-        );
-        return json_encode($ar);
-    }
-
+    */
     function stripe($amount = 0, $card_info = array(), $desc = '') {
         $this->load->model('stripe_payments');
         // $card_info = array( "number" => "4242424242424242", "exp_month" => 1, "exp_year" => 2016, "cvc" => "314" );
@@ -1648,11 +1632,6 @@ class Pos_model extends CI_Model
         }
         return FALSE;
     }
-
-//    public function enviar_doc_sunat_nubefact_masivo($dia=date('Y-m-d')){
-//        return "Pruebas...";
-//    }
-
 
     public function Igv(){
         return $this->Igv;

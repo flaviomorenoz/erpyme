@@ -78,9 +78,33 @@
 				padding-bottom: 4px;
 			}
 
+			.itom-fm{
+				font-size: 14px;
+				padding-left: 28px;
+				padding-top: 4px;
+				padding-bottom: 4px;
+			}
+
 			.itom-caja{
 				padding-top: 5px;
 				padding-bottom: 5px;
 				background-color: rgb(30,60,90);
 				width: 210px;
 			}
+
+	        /* Añade estilos adicionales para los submenús anidados */
+	        .submenu {
+	            display: none;
+	            list-style: none;
+	            padding-left: 30px; /* Espaciado para indicar la jerarquía */
+	            background-color: rgb(40,40,40);
+	        }
+
+	        .nav-item:hover {
+	            display: block;
+	        }
+
+	        .submenu-det{
+	        	padding-left: 15px;
+	        	background-color: rgb(40,40,40);
+	        }

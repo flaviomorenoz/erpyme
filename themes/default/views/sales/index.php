@@ -11,7 +11,7 @@ if(!isset($metodo)){ $metodo = "";}
     ?>
     
     function reenvio_a_sunat(sale_id1){
-        $.ajax({
+        /*$.ajax({
             data : {sale_id : sale_id1},
             url  : '<?= base_url("sales/envio_individual") ?>',
             type : 'get',
@@ -25,7 +25,24 @@ if(!isset($metodo)){ $metodo = "";}
             beforeSend: function(){
                 console.log("Por favor espere....")
             }
+        })*/
+
+        $.ajax({
+            data : {sale_id : sale_id1},
+            url  : '<?= base_url("sales/reenvio_individual_apisperu") ?>',
+            type : 'get',
+            success: function(response){
+                if(response == "OK"){
+                    alert("Se envía satisfactoriamente a Sunat.")
+                }else{
+                    alert("Hubo problemas en el envío.")
+                }
+            },
+            beforeSend: function(){
+                console.log("Por favor espere....")
+            }
         })
+
     }
 
     $(document).ready(function(){
@@ -206,7 +223,8 @@ if(!isset($metodo)){ $metodo = "";}
         
         <div id="preparo" class="col-sm-1" style="border-style:none; border-color:red; padding:5px;">
             <span style="margin-bottom:5px"></span><br>
-            <a href="#" onclick="activo1()" class="btn btn-primary"><b>Consultar</b></a>&nbsp;&nbsp;&nbsp;&nbsp;
+            <!--<a href="#" onclick="activo1()" class="btn btn-primary"><b>Consultar</b></a>&nbsp;&nbsp;&nbsp;&nbsp;-->
+            <button class="btn btn-primary" onclick="activo1()"><span style="font-weight:bold;">Consultar</span></button>
         </div>
         
         <div id="refresco" class="col-sm-1"></div>
@@ -369,38 +387,22 @@ if(!isset($metodo)){ $metodo = "";}
         document.getElementById('enlace_grilla_compras').click()
     }
 
-    /*function anular_doc(id){
-        console('en anular_doc')
-        var respeta = confirm("Confirma que desea Elimanar?")
-
-        if(respeta){
-            $.ajax({
-                data : {id : id},
-                url  : '<?= base_url('pos/enviar_anulacion_nubefact') ?>',
-                type : 'get',
-                success : function(response){
-                    alert(response)
-                }
-            })
-        }
-    }*/
-
     function anular_doc(id){
-        var respeta = confirm("Confirma que desea Elimanar?")
+        var respeta = confirm("Confirma que desea Eliminar?")
 
         if(respeta){
             $.ajax({
-                data:{id:id},
-                url:'<?= base_url('pos_model_apisperu/enviar_anulacion/') ?>' + id,
+                url:'<?= base_url('pos/anular_doc/') ?>' + id,
                 type:'get',
                 success:function(res){
-                    //var respuesta = JSON.parse(res)
                     if(res != 'KO'){
-                        alert(respuesta.mensaje)    
+                        //respuesta = JSON.parse(res)
+                        //alert(respuesta.mensaje)
+                        alert(res);
+                        window.location.reload()
                     }else{
                         alert("Hubo un inconveniente...no se pudo borrar")
                     }
-                    window.location.reload()
                 },
                 error: function(xhr, status, error){
                     // Ocurrió un error durante la solicitud AJAX

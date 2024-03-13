@@ -16,6 +16,8 @@ class Sales extends MY_Controller {
         $this->load->model('sales_model');
 
         $this->digital_file_types = 'zip|pdf|doc|docx|xls|xlsx|jpg|png|gif';
+        //error_reporting(E_ALL);
+        //ini_set('display_errors', '1');
 
     }
 
@@ -152,10 +154,11 @@ class Sales extends MY_Controller {
 
 
     function delete($id = NULL) {
+        /*
         if(DEMO) {
             $this->session->set_flashdata('error', lang('disabled_in_demo'));
             redirect(isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : 'welcome');
-        }
+        }*/
 
         if($this->input->get('id')){ $id = $this->input->get('id'); }
 
@@ -166,13 +169,24 @@ class Sales extends MY_Controller {
 
         //if ( $this->sales_model->deleteInvoice($id) ) {
         
+        // Elimino Payments
+        $this->db->where("sale_id",$id);
+        $this->db->delete("payments");
+
+        // Elimino sale_items
+        $this->db->where("sale_id",$id);
+        $this->db->delete("sale_items");
+
+        // Elimino sales
+        $this->db->where("id",$id);
+        $this->db->delete("sales");
+
+        /*
         $this->db->set("grand_total",0);
         $this->db->set("paid",0);
         $this->db->where("id",$id);
         $this->db->update("sales");
-
-        $this->db->where("sale_id",$id);
-        $this->db->delete("payments");
+        */
 
         if($this->db->affected_rows()>0){
             $this->session->set_flashdata('message', lang("invoice_deleted"));
@@ -420,6 +434,27 @@ class Sales extends MY_Controller {
         }
     }
 
+    public function reenvio_individual_apisperu(){
+
+        $this->load->model('pos_model_apisperu');
+        
+        $sale_id = $_REQUEST["sale_id"];
+        
+        $this->pos_model_apisperu->envio_masivo_individual($sale_id);
+
+        $query = $this->db->select("envio_electronico")->where("id",$sale_id)->get("sales");
+
+        foreach($query->result() as $r){
+            $rpta = $r->envio_electronico;
+        }
+        if ($rpta != '0'){
+            echo "OK";
+        }else{
+            echo "No se pudo";
+        }
+
+    }
+
     public function acumulado($tienda='0',$cDesde="null", $cHasta="null", $producto="null"){
         $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
         $this->data['page_title'] = "Ventas - Acumulado Diario";
@@ -567,5 +602,37 @@ class Sales extends MY_Controller {
 
     }
 
+    function platos_diarios_canales($tienda='0', $anno="null", $mes="null"){
+        $this->data['error'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('error');
+        $this->data['page_title'] = "Venta Diaria de Platos x Canal de Venta";
+        $this->data['tienda'] = $tienda;
+        $this->data['anno'] = $anno;
+        $this->data['mes'] = $mes;
+        //$this->data['producto'] = $producto;
+        $bc     = array(array('link' => '#', 'page' => lang('sales')));
+        $meta   = array('page_title' => $this->data['page_title'], 'bc' => $bc);
+        $this->page_construct('sales/platos_diarios_canales', $this->data, $meta);
+    }
+
+    function get_platos_diarios_canales($tienda='0', $anno="null", $mes="null"){
+        /*$tienda     = $this->input->post("tienda");
+        $anno       = $this->input->post("anno");
+        $mes        = $this->input->post("mes");*/
+    
+        $cSql = "CALL platos_diarios_canales(?,?,?)";
+        $result = $this->db->query($cSql,array($tienda, $anno, $mes))->result_array();
+
+        // Armando el rompecabezas
+        $ar_g = array();
+
+        $cado ="product_id, producto, dt, py, ra, dd, dias_01_dt, dias_01_py, dias_01_ra, dias_01_dd, dias_02_dt, dias_02_py, dias_02_ra, dias_02_dd, dias_03_dt, dias_03_py, dias_03_ra, dias_03_dd, dias_04_dt, dias_04_py, dias_04_ra, dias_04_dd, dias_05_dt, dias_05_py, dias_05_ra, dias_05_dd, dias_06_dt, dias_06_py, dias_06_ra, dias_06_dd, dias_07_dt, dias_07_py, dias_07_ra, dias_07_dd, dias_08_dt, dias_08_py, dias_08_ra, dias_08_dd, dias_09_dt, dias_09_py, dias_09_ra, dias_09_dd, dias_10_dt, dias_10_py, dias_10_ra, dias_10_dd, dias_11_dt, dias_11_py, dias_11_ra, dias_11_dd, dias_12_dt, dias_12_py, dias_12_ra, dias_12_dd, dias_13_dt, dias_13_py, dias_13_ra, dias_13_dd, dias_14_dt, dias_14_py, dias_14_ra, dias_14_dd, dias_15_dt, dias_15_py, dias_15_ra, dias_15_dd, dias_16_dt, dias_16_py, dias_16_ra, dias_16_dd, dias_17_dt, dias_17_py, dias_17_ra, dias_17_dd, dias_18_dt, dias_18_py, dias_18_ra, dias_18_dd, dias_19_dt, dias_19_py, dias_19_ra, dias_19_dd, dias_20_dt, dias_20_py, dias_20_ra, dias_20_dd, dias_21_dt, dias_21_py, dias_21_ra, dias_21_dd, dias_22_dt, dias_22_py, dias_22_ra, dias_22_dd, dias_23_dt, dias_23_py, dias_23_ra, dias_23_dd, dias_24_dt, dias_24_py, dias_24_ra, dias_24_dd, dias_25_dt, dias_25_py, dias_25_ra, dias_25_dd, dias_26_dt, dias_26_py, dias_26_ra, dias_26_dd, dias_27_dt, dias_27_py, dias_27_ra, dias_27_dd, dias_28_dt, dias_28_py, dias_28_ra, dias_28_dd, dias_29_dt, dias_29_py, dias_29_ra, dias_29_dd, dias_30_dt, dias_30_py, dias_30_ra, dias_30_dd, dias_31_dt, dias_31_py, dias_31_ra, dias_31_dd";
+
+        $ar_col = explode(",", $cado);
+        $limite = count($ar_col);
+        for($i=0; $i<$limite; $i++){ // Por cada producto
+            $ar_col[$i] = trim($ar_col[$i]);
+        }
+        echo $this->fm->json_datatable($ar_col,$result);
+    }
 
 }

@@ -5,6 +5,8 @@ class Reports_model extends CI_Model
 
     public function __construct() {
         parent::__construct();
+        $this->por_tarjeta = 0.95;
+        $this->por_delivery = 0.75;
     }
 
     public function getAllProducts() {
@@ -275,5 +277,149 @@ class Reports_model extends CI_Model
         return FALSE;
     }
 
+    function query_salidas_por_dia_ventas($tienda, $fec_ini, $fec_fin){
+        // DETALLE DE VENTAS
+        // Nota.- Estos % tambien estan en libreria FM
+        $por_tarjeta    = $this->por_tarjeta;
+        $por_delivery   = $this->por_delivery;
+
+
+        $cSql = "select date_format(tc.fecha,'%d-%m-%Y') as fecha, tc.dia_semana, b.cash, b.vendemas, b.transferencia, b.yape, b.plin, b.rappi, b.pedidosya, b.didi, b.culqi, 
+            b.cash + b.vendemas + b.transferencia + b.yape + b.plin + b.rappi + b.pedidosya + b.didi + b.culqi + b.otros as total
+            from tec_calendario tc
+            left join 
+            (
+                select date(ts.date) fecha, 
+                    sum(tp.cash) cash,
+                    sum(tp.vendemas) vendemas,
+                    sum(tp.transferencia) transferencia,
+                    sum(tp.yape) yape,
+                    sum(tp.plin) plin,
+                    sum(tp.rappi) rappi,
+                    sum(tp.pedidosya) pedidosya,
+                    sum(tp.didi) didi,
+                    sum(tp.culqi) culqi,
+                    sum(tp.otros) otros
+                from tec_sales ts
+                inner join 
+                (
+                    select date(date) fecha,sale_id, 
+                    sum(if(paid_by = 'cash',amount,0)) cash,
+                    sum(if(paid_by = 'Vendemas',amount* $por_tarjeta,0)) vendemas,
+                    sum(if(substr(paid_by,1,6)='Transf',amount,0)) transferencia,
+                    sum(if(paid_by = 'Yape',amount,0)) yape,
+                    sum(if(paid_by = 'Plin',amount,0)) plin,
+                    sum(if(paid_by = 'Rappi',amount * $por_delivery,0)) rappi,
+                    sum(if(paid_by = 'PedidosYa',amount * $por_delivery,0)) pedidosya,
+                    sum(if(paid_by = 'Didi',amount * $por_delivery,0)) didi,
+                    sum(if(paid_by = 'Culqi',amount * $por_tarjeta,0)) culqi,
+                    sum(if(paid_by not in ('cash','Vendemas','Yape','Plin','Rappi','PedidosYa','Didi','Culqi') and substr(paid_by,1,6)!='Transf',amount,0)) otros
+                    from tec_payments where note != 'PASE' and date(date) between '$fec_ini' and '$fec_fin'
+                    group by date(date), sale_id
+                ) tp on ts.id = tp.sale_id      
+                where ts.store_id = $tienda
+                group by date(ts.date)
+            ) b on date(tc.fecha) = b.fecha
+            where tc.fecha between '$fec_ini' and '$fec_fin'
+            order by tc.fecha";
+        //die($cSql);
+        return $cSql;
+    }
+
+    function query_salidas_por_dia($tienda, $fec_ini, $fec_fin){
+        // DETALLE RESUMEN - CUADRE DE CAJA
+        $por_tarjeta    = $this->por_tarjeta;
+        $por_delivery   = $this->por_delivery;
+        $cSql = "select date_format(tc.fecha,'%d-%m-%Y') as fecha, tc.dia_semana, tr.cash_in_hand, tr.cash_in_hand_adicional, ts.grand_total, a.con_factura, a.con_boleta, 
+            a.con_recibo, a.total_salidas, 
+            if(ts.grand_total is null, 0, ts.grand_total) as total_ventas_efectivo,
+            ts.vendemas + ts.transferencia + ts.yape + ts.plin + ts.culqi + ts.rappi + ts.pedidosya + ts.didi + ts.otros as total_otras_ventas,
+            remesas.remesa,
+            
+            if(tr.cash_in_hand is null,0,tr.cash_in_hand) + if(tr.cash_in_hand_adicional is null,0,tr.cash_in_hand_adicional) 
+            + if(ts.grand_total is null, 0, ts.grand_total) 
+            + if(ts.vendemas is null,0,ts.vendemas) + if(ts.culqi is null,0,ts.culqi) + if(ts.transferencia is null,0,ts.transferencia) + if(ts.yape is null,0,ts.yape) + if(ts.plin is null,0,ts.plin) + if(ts.rappi is null,0,ts.rappi) 
+            + if(ts.pedidosya is null,0,ts.pedidosya) + if(ts.didi is null,0,ts.didi) + if(ts.otros is null,0,ts.otros) 
+            - if(a.total_salidas is null,0,a.total_salidas) as caja_final,
+             
+            if(tr.cash_in_hand is null,0,tr.cash_in_hand) + if(tr.cash_in_hand_adicional is null,0,tr.cash_in_hand_adicional)
+            + if(ts.grand_total is null, 0, ts.grand_total) 
+            - (if(a.con_factura is null,0,a.con_factura) + if(a.con_boleta is null,0,a.con_boleta) + if(a.con_recibo is null,0,a.con_recibo)) as caja_final_efectivo,
+
+                tr.status as cierre,
+                if(tr.note is null,'',tr.note) note
+            from tec_calendario tc
+            left join (
+                SELECT 
+                    date_format(tp.date, '%d-%m-%Y') as fecha,
+                    tp.store_id,
+                    sum(if(tp.tipoDoc='F', `costo_tienda`, 0)) con_factura, 
+                    sum(if(tp.tipoDoc='B', `costo_tienda`, 0)) con_boleta, 
+                    sum(if(tp.tipoDoc not in ('F', 'B'),tp.costo_tienda, 0)) con_recibo, 
+                    sum(if(tp.costo_tienda is null, 0, tp.costo_tienda)) total_salidas
+                FROM `tec_purchases` tp left join tec_subtipo_gastos on tp.clasifica2 = tec_subtipo_gastos.id and tec_subtipo_gastos.descrip != 'Remesas'
+                where tp.store_id = $tienda
+                GROUP BY date_format(tp.date, '%d-%m-%Y'), tp.store_id
+            ) a on date_format(tc.fecha,'%d-%m-%Y') = a.fecha
+            left join (
+                select date_format(tec_sales.date, '%d-%m-%Y') fecha, tec_sales.store_id, 
+                sum(if(tp.paid_by = 'cash',tp.amount,0)) grand_total,
+                sum(if(tp.paid_by = 'Vendemas',tp.amount * $por_tarjeta,0)) vendemas, 
+                sum(if(substr(tp.paid_by,1,6)='Transf',tp.amount,0)) transferencia,
+                sum(if(tp.paid_by = 'Yape',tp.amount,0)) yape,
+                sum(if(tp.paid_by = 'Plin',tp.amount,0)) plin,
+                sum(if(tp.paid_by = 'CULQI',tp.amount * $por_tarjeta,0)) culqi, 
+                sum(if(tp.paid_by = 'Rappi',tp.amount * $por_delivery,0)) rappi,
+                sum(if(tp.paid_by = 'PedidosYa',tp.amount * $por_delivery,0)) pedidosya,
+                sum(if(tp.paid_by = 'Didi',tp.amount * $por_delivery,0)) didi,
+                sum(if(tp.paid_by not in ('cash','Vendemas','Yape','Plin','Rappi','PedidosYa','Didi','CULQI') and substr(tp.paid_by,1,6)!='Transf',tp.amount,0)) otros
+                from tec_sales
+                inner join tec_payments tp on tec_sales.id = tp.sale_id and tp.note != 'PASE'
+                where tec_sales.store_id = $tienda
+                GROUP BY date_format(tec_sales.date, '%d-%m-%Y'), tec_sales.store_id
+            ) ts on date_format(tc.fecha,'%d-%m-%Y') = ts.fecha
+            left join (
+                select date_format(date, '%d-%m-%Y') fecha, store_id, cash_in_hand, cash_in_hand_adicional, closed_at, status, note 
+                from tec_registers
+                where store_id = $tienda 
+            ) tr on date_format(tc.fecha,'%d-%m-%Y') = tr.fecha
+            left join (
+                select date_format(a.date,'%d-%m-%Y') fecha, a.store_id, b.product_id, sum(b.quantity*b.cost) remesa 
+                from tec_purchases a
+                inner join tec_purchase_items b on a.id = b.purchase_id
+                inner join tec_products c on b.product_id = c.id    
+                where c.name = 'REMESA' and a.store_id = $tienda
+                group by date_format(a.date,'%d-%m-%Y'), a.store_id, b.product_id 
+            ) remesas on date_format(tc.fecha,'%d-%m-%Y') = remesas.fecha    
+            where tc.fecha >= '$fec_ini' and tc.fecha <= '$fec_fin'
+            order by tc.fecha";
+
+        //$this->data['query'] = $this->db->query($cSql);
+        return $cSql;
+    }
+
+    function query_canales($store_id, $cDesde='', $cHasta=''){
+        $por_tarjeta    = $this->por_tarjeta;
+        $por_delivery   = $this->por_delivery;
+        
+         $cSql = "select date(a.date) fecha, 
+            sum(case when b.paid_by = 'Rappi' then b.amount * $por_delivery else 0 end) rappi,
+            sum(case when b.paid_by = 'PedidosYa' then b.amount * $por_delivery else 0 end) pedidosya,
+            sum(case when (b.paid_by = 'Didi' or a.tipo_precio_id = 5) then b.amount * $por_delivery else 0 end) didi,
+            sum(case when (b.paid_by not in ('Rappi','PedidosYa','Didi') and a.tipo_precio_id != 4)
+                then if(b.paid_by='CULQI', b.amount * $por_tarjeta, b.amount) else 0 end) directo,
+            sum(case when b.paid_by not in ('Rappi','PedidosYa','Didi') and a.tipo_precio_id = 4
+                then if(b.paid_by='CULQI', b.amount * $por_tarjeta, b.amount) 
+                else 0 end) propio
+            from tec_sales a
+            left join (
+                select sale_id, paid_by, amount from tec_payments where date(date) between '$cDesde' and '$cHasta'
+            ) b on a.id = b.sale_id
+            where a.store_id = $store_id and date(a.date) between '$cDesde' and '$cHasta' and a.anulado != '1'
+            group by date(a.date)
+            order by date(a.date)";
+
+        return $cSql;
+    }
 
 }

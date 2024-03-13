@@ -5,12 +5,12 @@ class Pos_model_apisperu extends CI_Model
 
     public function __construct() {
         parent::__construct();
-        $this->Igv = 10;
+        $this->Igv = 18;
     }
 
     public function addSale($data, $items, $payment = array(), $did = NULL) {
 
-        $this->fm->traza("ADDSALE-APISPERU");
+        //$this->fm->traza("ADDSALE-APISPERU");
 
         $this->db->where('serie',$data['serie']);
         $this->db->where('correlativo',$data['correlativo']);
@@ -88,9 +88,10 @@ class Pos_model_apisperu extends CI_Model
                 $this->el_json  = "";
      
                 // ****************************************************
-                $this->enviar_doc_sunat($sale_id, $data, $items);
+                if ($this->enviar_doc_sunat($sale_id, $data, $items, "ENVIO")){
+                    $this->enviar_doc_sunat($sale_id, $data, $items, "XML");
+                }
                 // ****************************************************
-                
                 
             }
 
@@ -105,9 +106,61 @@ class Pos_model_apisperu extends CI_Model
         return false;
     }
 
+    public function nube_serie($tipo, $tipoDocAfectado="", $tienda=0){
 
-    public function enviar_doc_sunat($sale_id, $data, $items){  // IMPLEMENTACION DE APISPERU
+        //die("Tienda:".gettype($tienda). " - ".$tienda);
 
+        if($tienda * 1 == 2){
+            if($tipo == "Boleta"){
+                return "BBB1"; // BOLETA DE VENTA B003 - 00002471 08/11/2021 
+            }elseif($tipo == "Factura"){
+                return "FFF1"; // Nº FACTURA F002 - 00000022 07/11/2021
+            }elseif($tipo == 'Ticket'){
+                return "TK1";
+            }else{
+                if(strlen($tipoDocAfectado) > 0){
+                    if($tipoDocAfectado == '1'){ return "FFF1"; } // FFF1
+                    if($tipoDocAfectado == '2'){ return "BBB1"; } // BBB1
+                }                
+            }
+        }
+
+        if($tienda * 1 == 3){
+            if($tipo == "Boleta"){
+                return "BBB2"; // BOLETA DE VENTA B003 - 00002471 08/11/2021 
+            }elseif($tipo == "Factura"){
+                return "FFF2"; // Nº FACTURA F002 - 00000022 07/11/2021
+            }elseif($tipo == 'Ticket'){
+                return "TK2";
+            }else{
+                if(strlen($tipoDocAfectado) > 0){
+                    if($tipoDocAfectado == '1'){ return "FFF2"; } // FFF1
+                    if($tipoDocAfectado == '2'){ return "BBB2"; } // BBB1
+                }                
+            }
+        }
+
+        if($tienda * 1 == 1){
+            if($tipo == "Boleta"){
+                return "BBB3"; // BOLETA DE VENTA B003 - 00002471 08/11/2021 
+            }elseif($tipo == "Factura"){
+                return "FFF3"; // Nº FACTURA F002 - 00000022 07/11/2021
+            }elseif($tipo == 'Ticket'){
+                return "TK3";
+            }else{
+                if(strlen($tipoDocAfectado) > 0){
+                    if($tipoDocAfectado == '1'){ return "FFF3"; } // FFF1
+                    if($tipoDocAfectado == '2'){ return "BBB3"; } // BBB1
+                }                
+            }
+        }
+
+    }
+
+
+    public function enviar_doc_sunat($sale_id, $data, $items, $tipo_envio){  // IMPLEMENTACION DE APISPERU
+
+        //traza("1) Inicio enviar_doc_sunat");
         // Token que sale del Loguin de la Empresa.
         $cToken = "Bearer ";
 
@@ -115,7 +168,7 @@ class Pos_model_apisperu extends CI_Model
         foreach($result as $r){
             $cToken .= $r->dato;
         }
-
+        
         $result = $this->db->select("tipoDoc")->where("id",$sale_id)->get("sales")->result();
         foreach($result as $r){
             $tipo_documento = $r->tipoDoc;
@@ -123,21 +176,45 @@ class Pos_model_apisperu extends CI_Model
 
         //Averiguando los datos de la empresa
         $store_id   = $data["store_id"];
-        $result     = $this->db->select("code, city, state, ubigeo, address1, address2")->where("id",$store_id)->get("stores")->result_array();
         $correlativo = $data["correlativo"];
+        
+        $query     = $this->db->select("dato")->where("name",'distrito')->get("variables");
+        foreach($query->result() as $r){
+            $ar1["distrito"]    = $r->dato;    
+        }
+        
+        $query    = $this->db->select("dato")->where("name",'ubigeo')->get("variables");
+        foreach($query->result() as $r){
+            $ar1["ubigeo"]      = $r->dato;
+        }
+
+        $result     = $this->db->select("code, city, state, ubigeo, address1, address2")->where("id",$store_id)->get("stores")->result_array();
 
         foreach($result as $r){
             $this->COMPANY_DIRECCION      = $r["address1"]; // "Las casuarinas 666"
             $this->COMPANY_PROV           = $r["city"];
             $this->COMPANY_DPTO           = "LIMA";
-            $this->COMPANY_DISTRITO       = $r["state"];
-            $this->COMPANY_UBIGEO         = $r["ubigeo"];
+            $this->COMPANY_DISTRITO       = $ar1["distrito"];
+            $this->COMPANY_UBIGEO         = $ar1["ubigeo"];
             $this->COMPANY_RAZON_SOCIAL   = $r["address2"]; //"DAVID MORENO PLETS"
             $this->COMPANY_RUC            = $r["code"]; //"10075047946";
         }
+        
+        /************************* D A T O S DE  H A R D C O D E O *****************************/
+        /*
+        $cToken = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE2OTQ1NTgwMjEsImV4cCI6NDg0ODE1ODAyMSwidXNlcm5hbWUiOiJkYXZpZGNvcm9uZWwiLCJjb21wYW55IjoiMjAwMDAwMDAwMDA4In0.cWjLxWGjHunDo78_OXnL0_tFFPJQI0erP-z0UnBT49hbRpmEM6WJQny21hQlzp7tSjPzp0Fcm_Sax8viwJ-9q87tHVnb6NmFXeZXKQYouWtwpCuktmetCVaobyoAbmzTjZjEobKJMfuy0-tKIKkfQVZO1323WUDHp2p1uJeG9GXD6VymxOYX8RgUx280RDlKtIYr_NZw9PgxUBDZGhmpQ53EBE478b6wuWr_vu_Ee53YPGc1bbS7WMITpCcwU0OHSXtDBprmKNsWkeQ45wCcI8iG6D6P9GL6s4DAl-e-a5A2kV6ws7ZN3O-z-WdBpx85DosKjbtosfDR3r7pJjPVVH-QYZSWq26I9PWAI-yQ8flD1SdleyZvBoqj8441bqZvstHYYBo202GC-JxDhrn1dbmPyIKOjnywbUqViMEGT7CWpgh33tfWoGTE0rW5AzkJamnBLfuMPM3wusn0LCU7G0dvf9cEZ0H7LgPJ-O_ENxS_VEpd3UDxbqRXUe8MrGGZHWQROWvmccGaFnHtT4AopPt8uwGGsPprGYVHdBTjeWHCynQ70RsaAO6e3ztfAmdz-7Oj-y6XefStmtJ3m96lbM3YiqT8qRHbdzJHw8Dhvxw-Mhxlr-F_3O3O22YcgJ4N4KfDgtkhJGjR62HqocFE9fqnA6U7sArDNFJ9yRpzznA";
+        $this->COMPANY_DIRECCION      = "AV LOS SAUCES 789";
+        $this->COMPANY_PROV           = $r["city"];
+        $this->COMPANY_DPTO           = "LIMA";
+        $this->COMPANY_DISTRITO       = $r["state"];
+        $this->COMPANY_UBIGEO         = $r["ubigeo"];
+        $this->COMPANY_RAZON_SOCIAL   = 'NEGOCIO DE EJEMPLO';
+        $this->COMPANY_RUC            = '200000000008';
+        */
 
         if($tipo_documento == 'Boleta' || $tipo_documento == 'Factura'){
 
+            //traza("2) Dentro de if Boleta o Factura en enviar_doc_sunat");
             // Subvariables aun por definir:
             if($tipo_documento == 'Boleta'){
                 $tipoDoc = '03';
@@ -146,7 +223,11 @@ class Pos_model_apisperu extends CI_Model
             }
             $serie      = $data["serie"]; //"B001";
             $tip_forma  = "Contado";
-            $fecha_emi  = date("Y-m-d") . "T" . date("H:i:s");
+            
+            //$fecha_emi  = date("Y-m-d") . "T" . date("H:i:s");
+            $fecha_emi = str_replace(" ", "T", substr($data["date"],0,19));
+            $fecha_sola = substr($fecha_emi,0,10);
+            
             $numDoc     = ""; // normalmente es el dni del cliente, pero en caso de empresa, no se
             $icbper     = 0;
             $porcentajeIgv = $this->Igv;
@@ -172,8 +253,14 @@ class Pos_model_apisperu extends CI_Model
                 where a.id = $sale_id");
 
             foreach ($query->result() as $r){
-                $numDoc         = $r->cf1;
-                //$grand_total  = $r["grand_total"];
+                if($tipoDoc == '03'){ // boleta
+                    $numDoc       = $r->cf1;
+                    $tipo_identidad = 1; // dni
+                }
+                if($tipoDoc == '01'){ // factura
+                    $numDoc       = $r->cf2;
+                    $tipo_identidad = 6; // RUC
+                }
                 $total          = $r->total;
                 $tax            = $r->tax;
                 $Cliente        = $r->customer_name;
@@ -212,7 +299,7 @@ class Pos_model_apisperu extends CI_Model
               },
               \"tipoMoneda\": \"PEN\",
               \"client\": {
-                \"tipoDoc\": \"1\",
+                \"tipoDoc\": \"$tipo_identidad\",
                 \"numDoc\": \"$numDoc\",
                 \"rznSocial\": \"$Cliente\",
                 \"address\": {
@@ -250,12 +337,15 @@ class Pos_model_apisperu extends CI_Model
             
             foreach ($query->result() as $r){
                 
+                // Redondeando net_unit_price para luego hacer los calculos
+                $net_unit_price = round($r->net_unit_price, 2);
+
                 $codProducto        = "P" . $r->product_id; //$r->codProdSunat;
                 //$unidad             = $items[0];
                 $descripcion        = $r->product_name;
                 $cantidad           = round($r->quantity,0);
-                $mtoValorUnitario   = round($r->net_unit_price,2)*1;
-                $mtoValorVenta      = round($r->net_unit_price * $cantidad * 1,2);
+                $mtoValorUnitario   = round($net_unit_price,2)*1;
+                $mtoValorVenta      = round($net_unit_price * $cantidad * 1,2);
                 $mtoBaseIgv         = round($cantidad * $mtoValorUnitario,2);
                 $porcentajeIgv      = $r->tax*1;
                 $igv                = round($mtoBaseIgv * ($porcentajeIgv/100),2); // round($r->subtotal - round($r->net_unit_price,2),2);
@@ -263,7 +353,7 @@ class Pos_model_apisperu extends CI_Model
                 $totalImpuestos     = $igv;
                 
                 $igvX               = 1 + ($porcentajeIgv/100);
-                $mtoPrecioUnitario  = $this->fm->floor_dec($r->net_unit_price * $igvX, 2);           
+                $mtoPrecioUnitario  = $this->fm->floor_dec($net_unit_price * $igvX, 2);           
 
                 $campos .= "{
                   \"codProducto\": \"$codProducto\",
@@ -305,44 +395,112 @@ class Pos_model_apisperu extends CI_Model
               ]
             }";
 
-            $url = "https://facturacion.apisperu.com/api/v1/invoice/send";
+            if($tipo_envio == 'ENVIO'){
+                $url = "https://facturacion.apisperu.com/api/v1/invoice/send";
+            }
+
+            if($tipo_envio == 'XML'){
+                $url = "https://facturacion.apisperu.com/api/v1/invoice/xml";
+            }            
+
+            //traza("3) Antes de rulo en enviar_doc_sunat");
+            // ***********************************
+            $rpta_sunat = $this->rulo($campos, $cToken, $url);
+            // ***********************************
+            
+            // *********************************************************
+            $rpta_analizada = $this->analizar_rpta_sunat($rpta_sunat);
+            // *********************************************************
+
+            $cSale_id = substr("0000000".$sale_id,-7);
+
+            $carpeta = substr($fecha_sola,0,7);
+
+            // Guarda la respuesta:
+            if ($tipo_envio == 'ENVIO'){
+
+                // Guardando antes del envio
+                $gn = fopen("comprobantes/{$carpeta}/doc_{$cSale_id}_{$fecha_sola}_antes_de.txt","w");
+                fputs($gn, $campos);
+                fclose($gn);
+                $gn = null;
+
+                // Guardando respuesta
+                $gn = fopen("comprobantes/{$carpeta}/doc_{$cSale_id}_{$fecha_sola}_envio.txt","w");
+                fputs($gn, $rpta_sunat);
+                fclose($gn);
+                $gn = null;
+
+                if($rpta_analizada){
+                
+                    $cSql = "update tec_sales set envio_electronico=1 where id = ?";
+                    $this->db->query($cSql, array($sale_id));
+                    return true;
+
+                }else{
+
+                    $pos1 = strpos($rpta_sunat, '"error":');
+                    if($pos1 === false){
+                    }else{
+                        $mensaje = substr($rpta_sunat, $pos1+7,120);
+                        $mensaje = str_replace("'","",$mensaje);
+                        $mensaje = str_replace('"',"",$mensaje);
+                        $cSql = "update tec_sales set mensaje_sunat='$mensaje' where id = ?";
+                        echo $sale_id . ";" . $store_id . ";" . $correlativo . ";" . $mensaje . "<br>";
+                        $this->db->query($cSql, array($sale_id));
+                    }
+
+                    traza("******************INICIO:****************************");
+                    traza($campos);
+                    traza($rpta_sunat);
+                    return false;
+                }
+            }
+
+            if ($tipo_envio == 'XML'){
+                $gn = fopen("comprobantes/{$carpeta}/doc_{$cSale_id}_{$fecha_sola}_xml.txt","w");
+                fputs($gn, $rpta_sunat);
+                fclose($gn);
+                $gn = null;
+
+                return true;
+            }
 
         }
 
         /*elseif($tipo_documento == 'Nota_de_credito' || $tipo_documento == 'Nota_de_debito'){
-
             $campos = $this->Notas_varias($sale_id);
-
             $url = "https://facturacion.apisperu.com/api/v1/note/send";
         }
         */
 
-        $nombre_file    = "ultimo.txt";
-        $gestor         = fopen($nombre_file,"w");
-        fputs($gestor, $campos);
-        fclose($gestor);
-        
-        // ***********************************
-        $rpta_sunat = $this->rulo($campos, $cToken, $url);
-        // ***********************************
-        
-        $rpta_analizada = $this->analizar_rpta_sunat($rpta_sunat);
 
-        // Guarda la respuesta:
-        if($rpta_analizada){
-            $cSql = "update tec_sales set envio_electronico=1 where id = ?";
-            $this->db->query($cSql, array($sale_id));
-        }
+    }
 
-        if ($rpta_analizada){
+    public function envio_masivo_individual($sale_id) {
+        $data = array(); 
+
+        $result = $this->db->select('*')->where('id',$sale_id)->get('sales')->result_array();
+        
+        $data = $result[0];
+
+        $items = $this->db->select('*')->where('sale_id',$sale_id)->get('sale_items')->result_array();
+        
+        if ($this->enviar_doc_sunat($sale_id, $data, $items, "ENVIO")){
+            $this->enviar_doc_sunat($sale_id, $data, $items, "XML");
             return true;
         }else{
             return false;
         }
-
     }
 
     function rulo($campos, $cToken, $url){ 
+        if(strpos($url, 'xml') === false){
+            //traza("**campos:*** $url *************");
+            //traza($campos);
+            //traza(" ");
+        }
+
         $curl = curl_init();
 
         curl_setopt($curl, CURLOPT_URL, $url);
@@ -363,6 +521,11 @@ class Pos_model_apisperu extends CI_Model
         //$response = curl_exec($curl);
         $response = "Bloqueado por el momento";
 
+        if(strpos($url, 'xml') === false){
+            //traza("**respuesta:*** $url *************");
+            //traza($response);
+            //traza(" ");
+        }
         curl_close($curl);
 
         return $response;
@@ -511,7 +674,7 @@ class Pos_model_apisperu extends CI_Model
         echo json_encode($ar);
     }
 */
-    function enviar_anulacion($id){
+    function enviar_anulacion($id){ // responde con return
 
         /*
         $result = $this->db->select("b.codigo_sunat tipoDoc, a.date, a.serie, a.correlativo, a.store_id")
@@ -520,18 +683,18 @@ class Pos_model_apisperu extends CI_Model
             ->where("a.id",$id)->get()->result();
         */
 
-        $result = $this->db->select("tec_sales.tipoDoc, tec_sales.date, tec_sales.serie, tec_sales.correlativo, tec_sales.store_id");
-        $this->db->where("tec_sales.id", $id)->get()->result();
+        $result = $this->db->select("tec_sales.tipoDoc, tec_sales.date, tec_sales.serie, tec_sales.correlativo, tec_sales.store_id")
+            ->where("tec_sales.id", $id)->get("tec_sales")->result();
         foreach($result as $r){
-            $tipo_documento = $r->tipoDoc; // 1 Factura, 2 Boleta
+            $tipo_documento = $r->tipoDoc; // 01 Factura, 03 Boleta
             
             if($r->tipoDoc == "Boleta"){
-                $tipo_documento = 2;
+                $tipo_documento = "03";
             }else{
                 if($r->tipoDoc == "Factura"){
-                    $tipo_documento = 1;    
+                    $tipo_documento = "01";    
                 }else{
-                    echo "KO";
+                    return "KO";
                 }
             }
 
@@ -541,19 +704,31 @@ class Pos_model_apisperu extends CI_Model
             $store_id       = $r->store_id;
         }
 
-        $maximon        = 1;
+        $query          = $this->db->select("dato")->where("name","CORRELATIVO_ANULA")->get("variables");
+        foreach($query->result() as $r){ $maximon = intval($r->dato)+1; }
+
         $fec_hoy        = date("Y-m-d") . "T" . "00:00:00-05:00";
  
         //Averiguando los datos de la empresa
         $result     = $this->db->select("code, city, state, ubigeo, address1, address2, address2 nombre_empresa, code ruc")
                     ->where("id",$store_id)->get("tec_stores")->result_array();
         
+        $query     = $this->db->select("dato")->where("name",'distrito')->get("variables");
+        foreach($query->result() as $r){
+            $ar1["distrito"]    = $r->dato;    
+        }
+ 
+        $query     = $this->db->select("dato")->where("name",'distrito')->get("variables");
+        foreach($query->result() as $r){
+            $ar1["distrito"]    = $r->dato;    
+        }
+
         foreach($result as $r){
             $this->COMPANY_DIRECCION      = $r["address1"]; 
             $this->COMPANY_PROV           = $r["city"];
             $this->COMPANY_DPTO           = "LIMA";
-            $this->COMPANY_DISTRITO       = $r["state"];
-            $this->COMPANY_UBIGEO         = $r["ubigeo"];
+            $this->COMPANY_DISTRITO       = $ar1["distrito"];
+            $this->COMPANY_UBIGEO         = $ar1["ubigeo"];
             $this->COMPANY_RAZON_SOCIAL   = $r["nombre_empresa"]; 
             $this->COMPANY_RUC            = $r["ruc"]; 
         }
@@ -591,31 +766,56 @@ class Pos_model_apisperu extends CI_Model
 
         $datos = $cad;
 
-        //echo $datos . "<br><br>";
-
         $url = "https://facturacion.apisperu.com/api/v1/voided/send";
 
+        // Token que sale del Loguin de la Empresa.
+        $cToken = "Bearer ";
+
+        $result = $this->db->select("dato")->where("name","TOKEN")->get("variables")->result();
+        foreach($result as $r){
+            $cToken .= $r->dato;
+        }
+
         // ***********************************
-        $respuesta = $this->rulo($campos, $cToken, $url);
+        $respuesta = $this->rulo($datos, $cToken, $url);
         // ***********************************
         //$respuesta = $this->rulo($url, $datos);
         
+        $cSale_id = substr("0000000".$id,-7);        
+
         $gn             = null;
-        $nombre_file    = "comprobantes/doc_{$id}_anulacion.txt";
+        $nombre_file    = "comprobantes/doc_{$cSale_id}_anulacion.txt";
         $gn             = fopen($nombre_file,"w");
         fputs($gn, $respuesta);
         fclose($gn);
 
-        echo $respuesta;
+        return $respuesta;
     }
 
     function analizar_rpta_sunat($bloque){
-        $rpta = strpos($bloque, "ha sido aceptada");
-        if($rpta != false && $rpta > 0){
+        $rpta1 = strpos($bloque, "ha sido aceptada");
+        $rpta2 = strpos($bloque, "ha sido aceptado");
+        $rpta3 = strpos($bloque, "1033 - El comprobante fue registrado previamente con otros datos");
+        
+        if($rpta1 === false && $rpta2 === false && $rpta3 === false){
+            $rpta = false;
+        }else{
+            $rpta = true;
+        }
+
+        if($rpta){
             return true;
         }else{ 
             return false;
         }
     }
+
+    /*function reenvio_a_sunat($sale_id){
+        if ($this->envio_masivo_individual($sale_id)){
+            echo "OK";
+        }else{
+            echo "No se pudo reenviar...";
+        }
+    }*/
 
 }

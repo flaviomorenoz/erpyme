@@ -2,6 +2,22 @@
 if(!isset($tienda)){
     $tienda = "";
 }
+
+if(!isset($anno)){
+    $anno = date("Y"); 
+}else{
+    if(is_null($anno) || $anno == 'null'){
+        $anno = date("Y");
+    }
+}
+if(!isset($mes)){       
+    $mes = date("m"); 
+}else{
+    if($mes == 'null' || is_null($mes)){
+        $mes = date("m");
+    }
+}
+
 ?>
 <script type="text/javascript">
     <?php
@@ -52,6 +68,8 @@ if(!isset($tienda)){
                 "data": function ( d ) {
                     d.<?=$this->security->get_csrf_token_name();?> = "<?=$this->security->get_csrf_hash()?>";
                     d.tienda = document.getElementById("tienda").value;
+                    d.anno = document.getElementById("anno").value;
+                    d.mes = document.getElementById("mes").value;
                 }
             },
             "buttons": [
@@ -70,7 +88,7 @@ if(!isset($tienda)){
                 { "data": "igv"},
                 { "data": "descuento"},
                 { "data": "grand_total"},
-                { "data": "barras"}
+                { "data": "barras", "visible": false}
             ],
             
             /* fecha total igv descuento grand_total barras */
@@ -121,6 +139,7 @@ if(!isset($tienda)){
 <section class="content">
 
     <!-- ****** INICIO DE LOS FILTROS ********* -->
+    <?=form_open_multipart(base_url("reports/ventas_por_dia"), 'class="validation" id="form_compra"') ?>
     <div class="row" style="display:flex;margin-bottom: 5px;">
         <!--<div class="col-sm-2" style="border-style:none; border-color:red;">
             <div class="form-group">
@@ -150,29 +169,38 @@ if(!isset($tienda)){
             </div>
         </div>
 
-        <div id="preparo" class="col-sm-1" style="border-style:none; border-color:red; margin: 25px 0px 20px 0px;">
-            <button onclick="activo1()" class="btn btn-primary">Consultar</button>
+        <div class="col-sm-2" style="border-style:none; border-color:red;">
+            <div class="form-group">
+                <label for="">Año:</label>
+                <input type="number" name="anno" id="anno" class="form-control" value="<?= $anno ?>">
+            </div>    
         </div>
 
+        <div class="col-sm-2" style="border-style:none; border-color:red;">
+            <div class="form-group">
+                <label for="">Mes:</label>
+                <?php
+                    $ar = array('01'=>'Enero','02'=>'Febrero','03'=>'Marzo','04'=>'Abril','05'=>'Mayo','06'=>'Junio','07'=>'Julio','08'=>'Agosto','09'=>'Setiembre','10'=>'Octubre','11'=>'Noviembre','12'=>'Diciembre');
+                    echo form_dropdown('mes',$ar,$mes,'class="form-control tip" id="mes"');
+                ?>
+            </div>
+        </div>
+        
+        <div id="preparo" class="col-sm-1" style="border-style:none; border-color:red; margin: 25px 0px 20px 0px;">
+            <button type="submit" class="btn btn-primary">Consultar</button>
+        </div>
     </div>
+    <?=form_close() ?>
 
     <script type="text/javascript">
         function activo1(){
-            /*let desde       = document.getElementById("desde").value
-            let hasta       = document.getElementById("hasta").value
-            if(desde == ""){ desde = "null" }
-            if(hasta == ""){ hasta = "null" }
-            let proveedor   = document.getElementById("proveedor").value
-            let fec_emi     = document.getElementById("fec_emi").value
-            if(fec_emi == ""){ fec_emi = "null" }
-            let cadena      = ""*/
-            let tienda      = document.getElementById("tienda").value
-            window.location.assign("<?= base_url() ?>reports/ventas_por_dia?tienda="+$("#tienda").val())
+            //let tienda      = document.getElementById("tienda").value
+            //window.location.assign("<?= base_url() ?>reports/ventas_por_dia?tienda="+$("#tienda").val())
         }
     </script>
 
     <div class="row">
-        <div class="col-xs-12 col-sm-8">
+        <div class="col-xs-12 col-sm-10 col-md-8">
             <div class="box box-primary">
                 <div class="box-body">
                     <div class="table-responsive">
