@@ -1,0 +1,75 @@
+{
+              "ublVersion": "2.1",
+              "tipoOperacion": "0101", 
+              "tipoDoc": "01",
+              "serie": "FFF3",
+              "correlativo": "468",
+              "fechaEmision": "2024-01-30T17:52:48-05:00",
+              "formaPago": {
+                "moneda": "PEN",
+                "tipo": "Contado"
+              },
+              "tipoMoneda": "PEN",
+              "client": {
+                "tipoDoc": "6",
+                "numDoc": "20251293181",
+                "rznSocial": "INDECO SA",
+                "address": {
+                  "direccion": "sin direccion",
+                  "provincia": "LIMA",
+                  "departamento": "LIMA",
+                  "distrito": "LIMA",
+                  "ubigueo": "150101"
+                }
+              },"company": {
+                "ruc": 20551286429,
+                "razonSocial": "INVERSIONES QLINARIAS SAC",
+                "address": {
+                  "direccion": "Av Universitaria 567-B Urb. Pando ET. SIETE",
+                  "provincia": "Lima",
+                  "departamento": "LIMA",
+                  "distrito": "SAN MIGUEL",
+                  "ubigueo": "150136"
+                }
+              },"mtoOperGravadas": 72.2,
+              "mtoIGV": 13,
+              "icbper": 0,
+              "valorVenta": 72.2,
+              "totalImpuestos": 13,
+              "subTotal": 85.2,
+              "redondeo": 0,
+              "mtoImpVenta": 85.2,
+              "details": [{
+                  "codProducto": "P3",
+                  "unidad": "NIU",
+                  "descripcion": "Coca Cola",
+                  "cantidad": 3,
+                  "mtoValorUnitario": 3.81,
+                  "mtoValorVenta": 11.43,
+                  "mtoBaseIgv": 11.43,
+                  "porcentajeIgv": 18,
+                  "igv": 2.06,
+                  "tipAfeIgv": 10,
+                  "totalImpuestos": 2.06,
+                  "mtoPrecioUnitario": 4.49
+                },{
+                  "codProducto": "P20",
+                  "unidad": "NIU",
+                  "descripcion": "De Antaño",
+                  "cantidad": 3,
+                  "mtoValorUnitario": 20.25,
+                  "mtoValorVenta": 60.75,
+                  "mtoBaseIgv": 60.75,
+                  "porcentajeIgv": 18,
+                  "igv": 10.94,
+                  "tipAfeIgv": 10,
+                  "totalImpuestos": 10.94,
+                  "mtoPrecioUnitario": 23.89
+                }],
+              "legends": [
+                {
+                  "code": "1000",
+                  "value": "Son ochenta y cinco y 20/100 Soles"
+                }
+              ]
+            }

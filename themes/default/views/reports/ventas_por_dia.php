@@ -97,9 +97,25 @@ if(!isset($mes)){
                 nRow.id = aData.id;
                 return nRow;
             },
-            "footerCallback": function (  tfoot, data, start, end, display ) {
+            "footerCallback": function (tfoot, data, start, end, display){
                 var api = this.api(), data;
-            },
+                $(api.column(2).footer()).html( 
+                    cf(api.column(2).data().reduce( function (a, b) { 
+                        paz = pf(a) + pf(b)
+                        return paz;
+                    }, 0))
+                );
+
+                $(api.column(5).footer()).html( 
+                    cf(api.column(5).data().reduce( function (a, b) { 
+                        paz = pf(a) + pf(b)
+                        return paz;
+                    }, 0))
+                );
+
+                //$(api.column(10).footer()).html( cf(api.column(10).data().reduce( function (a, b) { return pf(a) + pf(b); }, 0)) );
+                //$(api.column(11).footer()).html( cf(api.column(11).data().reduce( function (a, b) { return pf(a) + pf(b); }, 0)) );
+            }
         });
 
         $('#search_table').on( 'keyup change', function (e) {
@@ -235,25 +251,25 @@ if(!isset($mes)){
                                 <!-- ORDENES COLUMNAS Y BUSQ. INDIVIDUALES -->
                                 <tr>
                                     <th class="col-sm-2" style="">
-                                        <input type="text" class="text_filter" placeholder="[fecha]">
+                                        <!--<input type="text" class="text_filter" placeholder="[fecha]">-->
                                     </th>
                                     <th class="col-sm-2">
-                                        <input type="text" class="text_filter" placeholder="[dia]">
+                                        <!--<input type="text" class="text_filter" placeholder="[dia]">-->
                                     </th>                                    
                                     <th class="col-sm-1">
-                                        <input type="text" class="text_filter" placeholder="[Total sin Igv]">
+                                        <!--<input type="text" class="text_filter" placeholder="[Total sin Igv]">-->
                                     </th>
                                     <th class="col-sm-1">
-                                        <input type="text" class="text_filter" placeholder="[Igv]">
+                                        <!--<input type="text" class="text_filter" placeholder="[Igv]">-->
                                     </th>
                                     <th class="col-sm-1">
-                                        <input type="text" class="text_filter" placeholder="[Descuento]">
+                                        <!--<input type="text" class="text_filter" placeholder="[Descuento]">-->
                                     </th>
                                     <th class="col-sm-1">
-                                        <input type="text" class="text_filter" placeholder="[Total]">
+                                        <!--<input type="text" class="text_filter" placeholder="[Total]">-->
                                     </th>
                                     <th class="col-sm-4">
-                                        <input type="text" class="text_filter" placeholder="[.]">
+                                        <!--<input type="text" class="text_filter" placeholder="[.]">-->
                                     </th>
                                 </tr>
                         </tfoot>

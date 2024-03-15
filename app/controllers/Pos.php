@@ -30,6 +30,8 @@ class Pos extends MY_Controller {
 
     function index($sid = NULL, $eid = NULL){
         
+        $opcion_masiva = true;
+
         if (!$this->Settings->multi_store){
             $this->session->set_userdata('store_id', 1);
         }
@@ -463,7 +465,7 @@ class Pos extends MY_Controller {
                 $data["correlativo"]        = $this->input->post("correlativo");
 
 
-                if($sale = $this->pos_model_apisperu->addSale($data, $products, $payment, $did)){
+                if($sale = $this->pos_model_apisperu->addSale($data, $products, $payment, $did, $opcion_masiva)){
                     
                     $this->session->set_userdata('rmspos', 1);
                     if($this->pos_model_apisperu->get_enviada_sunat($sale["sale_id"])){

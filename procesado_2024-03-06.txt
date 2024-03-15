@@ -1,0 +1,13 @@
+2024-03-13 17:18:58 Se procesaron 0 comprobantes.
+2024-03-06 [70994] 2024-01-30 17:46:35 Boleta Mal
+2024-03-06 [70995] 2024-01-30 17:52:48 Factura Mal
+2024-03-06 [70997] 2024-01-30 18:19:24 Factura Mal
+2024-03-13 17:32:24 Se procesaron 3 comprobantes.
+2024-03-06 [70994] 2024-01-30 17:46:35 Boleta Mal
+2024-03-06 [70995] 2024-01-30 17:52:48 Factura Mal
+2024-03-06 [70997] 2024-01-30 18:19:24 Factura Mal
+2024-03-13 17:33:24 Se procesaron 3 comprobantes.
+2024-03-06 [70994] 2024-01-30 17:46:35 Boleta Mal
+2024-03-06 [70995] 2024-01-30 17:52:48 Factura Mal
+2024-03-06 [70997] 2024-01-30 18:19:24 Factura Mal
+2024-03-13 17:37:36 Se procesaron 3 comprobantes.

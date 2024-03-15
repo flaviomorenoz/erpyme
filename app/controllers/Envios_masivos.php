@@ -20,11 +20,11 @@ class Envios_masivos extends MY_Controller {
 
     public function envio_masivo_t_p_fecha($fecha){
         
-        //$tiempo     = strtotime($fecha . " +1 day");
-        //$dia        = date("Y-m-d", $tiempo);
-        
         $cSql   = "select id, grand_total, paid, date, tipoDoc from tec_sales".
             " where envio_electronico = 0 and tipoDoc != 'Ticket' and anulado!='1' and date(date) = ? order by id limit 70";  // ESTO NO ES +++++++++++++++++
+
+        //$cSql = "select id, grand_total, paid, date, tipoDoc from tec_sales
+        //where envio_electronico = 0 and tipoDoc != 'Ticket' and anulado!='1' and date(date) = '2024-01-30' order by id limit 3";
         
         $query  = $this->db->query($cSql,array($fecha));
         

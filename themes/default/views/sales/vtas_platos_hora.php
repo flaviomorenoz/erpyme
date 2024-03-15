@@ -1,7 +1,20 @@
 <?php (defined('BASEPATH')) OR exit('No direct script access allowed'); 
 if(!isset($tienda)){ $tienda = "";}
-if(!isset($desde)){ $desde = ""; }
-if(!isset($hasta)){ $hasta = ""; }
+if(!isset($desde)){ 
+    $desde = date("Y-m-d"); 
+}else{
+    if($desde == "" || $desde == "null" || is_null($desde)){
+        $desde = date("Y-m-d");
+    }
+}
+if(!isset($hasta)){ 
+    $hasta = date("Y-m-d"); 
+}else{
+    if($hasta == "" || $hasta == "null" || is_null($hasta)){
+        $hasta = date("Y-m-d");
+    }
+}
+
 if(!isset($producto)){ $producto = "";}
 ?>
 <script type="text/javascript">

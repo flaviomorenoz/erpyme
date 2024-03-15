@@ -8,7 +8,7 @@ class Pos_model_apisperu extends CI_Model
         $this->Igv = 18;
     }
 
-    public function addSale($data, $items, $payment = array(), $did = NULL) {
+    public function addSale($data, $items, $payment = array(), $did = NULL, $opcion_masiva=false) {
 
         //$this->fm->traza("ADDSALE-APISPERU");
 
@@ -88,22 +88,28 @@ class Pos_model_apisperu extends CI_Model
                 $this->el_json  = "";
      
                 // ****************************************************
-                if ($this->enviar_doc_sunat($sale_id, $data, $items, "ENVIO")){
-                    $this->enviar_doc_sunat($sale_id, $data, $items, "XML");
+                if($opcion_masiva == false){
+                    if ($this->enviar_doc_sunat($sale_id, $data, $items, "ENVIO")){
+                        if ($this->enviar_doc_sunat($sale_id, $data, $items, "XML")){
+                            $bandera_valida = true;
+                        }
+                    }
                 }
                 // ****************************************************
                 
             }
 
-            if ($this->db->trans_status() === FALSE || $bandera_valida == false){
+            if ($this->db->trans_status() === FALSE){
                 $this->db->trans_rollback();
-                return false;
+                $bandera_valida = false;
             }else{
                 $this->db->trans_commit();
                 return array('sale_id' => $sale_id, 'message' => $msg);
+                $bandera_valida = true;
             }
+
         }
-        return false;
+        return $bandera_valida;
     }
 
     public function nube_serie($tipo, $tipoDocAfectado="", $tienda=0){
@@ -455,19 +461,20 @@ class Pos_model_apisperu extends CI_Model
                     traza($rpta_sunat);
                     return false;
                 }
-            }
-
-            if ($tipo_envio == 'XML'){
+            }elseif($tipo_envio == 'XML'){
                 $gn = fopen("comprobantes/{$carpeta}/doc_{$cSale_id}_{$fecha_sola}_xml.txt","w");
                 fputs($gn, $rpta_sunat);
                 fclose($gn);
                 $gn = null;
 
                 return true;
+            }else{
+                return false;
             }
 
         }
 
+        return true;
         /*elseif($tipo_documento == 'Nota_de_credito' || $tipo_documento == 'Nota_de_debito'){
             $campos = $this->Notas_varias($sale_id);
             $url = "https://facturacion.apisperu.com/api/v1/note/send";
@@ -487,11 +494,11 @@ class Pos_model_apisperu extends CI_Model
         $items = $this->db->select('*')->where('sale_id',$sale_id)->get('sale_items')->result_array();
         
         if ($this->enviar_doc_sunat($sale_id, $data, $items, "ENVIO")){
-            $this->enviar_doc_sunat($sale_id, $data, $items, "XML");
-            return true;
-        }else{
-            return false;
+            if($this->enviar_doc_sunat($sale_id, $data, $items, "XML")){
+                return true;
+            }
         }
+        return false;
     }
 
     function rulo($campos, $cToken, $url){ 
